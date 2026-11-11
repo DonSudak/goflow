@@ -6,6 +6,7 @@
 import {api} from '@services/api';
 import {GameManifest, ManifestCharacter, syncVariablesFromManifest} from '@services/gameManifest';
 import {Entity, EntityParameter, EntityType} from '@types-folder/entities';
+import {Variable} from '@types-folder/variables';
 
 import {useGameManifestStore} from '@store/useGameManifestStore';
 import {useGraphStore} from '@store/useGraphStore';
@@ -21,6 +22,15 @@ export const GAME_ID_PARAMETER = 'Game ID';
 export const charactersToCreate = (characters: ManifestCharacter[], entities: Entity[], gameIdParamId: string | undefined): ManifestCharacter[] => {
   const known = new Set(entities.flatMap((e) => (e.values || []).filter((v) => v.parameterId === gameIdParamId).map((v) => String(v.value))));
   return characters.filter((c) => !known.has(c.id));
+};
+
+/** Adds a boolean `flags.<x>` variable for every manifest flag that has none (the exporter maps them to set_flag/flag). */
+export const withManifestFlags = (variables: Variable[], flags: string[]): Variable[] => {
+  const known = new Set(variables.map((v) => v.internalName || v.name));
+  const added = flags
+    .filter((f) => !known.has(`flags.${f}`))
+    .map((f): Variable => ({id: `game_flags.${f}`, name: `flags.${f}`, internalName: `flags.${f}`, type: 'boolean', value: false, description: '[game] flag', source: 'game'}));
+  return [...variables, ...added];
 };
 
 /** The project's character type: by `type` key, then by name (also the Russian "Персонаж"). */
@@ -48,7 +58,7 @@ export const applyManifest = async (projectId: string, manifest: GameManifest): 
   useGameManifestStore.getState().setManifest(manifest);
 
   const before = useVariablesStore.getState().variables;
-  const synced = syncVariablesFromManifest(before, manifest);
+  const synced = withManifestFlags(syncVariablesFromManifest(before, manifest), manifest.flags);
   useVariablesStore.getState().setVariables(synced);
   await useGraphStore.getState().saveToDb();
 

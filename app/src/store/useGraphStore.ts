@@ -112,7 +112,7 @@ export interface GraphStore {
   deleteConditionsWithVariable: (variableId: string) => void;
 
   // Функция для обновления узла с операциями
-  updateNodeWithOperations: (nodeId: string, updatedNode: NarrativeNode) => void;
+  updateNodeWithOperations: (nodeId: string, updatedNode: NarrativeNode | ChoiceNode) => void;
 
   // Функция для обновления целого слоя (используется при обновлении операций)
   updateLayerWithOperations: (layerId: string, updatedLayer: Layer) => void;
@@ -1697,7 +1697,7 @@ export const useGraphStore = create<GraphStore>()(
       },
 
       // Функция для обновления узла с операциями
-      updateNodeWithOperations: (nodeId: string, updatedNode: NarrativeNode) => {
+      updateNodeWithOperations: (nodeId: string, updatedNode: NarrativeNode | ChoiceNode) => {
         const {currentGraphId, layers} = get();
         const graph = layers[currentGraphId];
 

@@ -1,4 +1,5 @@
 import {nanoid} from 'nanoid';
+import {supportsOperations} from 'src/utils/nodeOperations';
 import {create} from 'zustand';
 import {devtools, subscribeWithSelector} from 'zustand/middleware';
 
@@ -84,7 +85,7 @@ export const useOperationsStore = create<OperationsStore>()(
 
         for (const nodeId in layer.nodes) {
           const node = layer.nodes[nodeId];
-          if (node.type === 'narrative' && node.operations) {
+          if (supportsOperations(node) && node.operations) {
             const operationExists = node.operations.some((op) => op.id === operationId);
             if (operationExists) {
               commandManager.updateOperation(nodeId, operationId, updates);
@@ -104,7 +105,7 @@ export const useOperationsStore = create<OperationsStore>()(
         // Находим узел, содержащий операцию
         for (const nodeId in layer.nodes) {
           const node = layer.nodes[nodeId];
-          if (node.type === 'narrative' && node.operations) {
+          if (supportsOperations(node) && node.operations) {
             const operationIndex = node.operations.findIndex((op) => op.id === operationId);
 
             if (operationIndex !== -1) {
@@ -146,7 +147,7 @@ export const useOperationsStore = create<OperationsStore>()(
         const {currentGraphId, layers} = graphStore;
         const layer = layers[currentGraphId];
 
-        if (layer && layer.nodes[nodeId] && layer.nodes[nodeId].type === 'narrative') {
+        if (layer && layer.nodes[nodeId] && supportsOperations(layer.nodes[nodeId])) {
           const narrativeNode = layer.nodes[nodeId];
 
           if (narrativeNode.operations) {
@@ -175,7 +176,7 @@ export const useOperationsStore = create<OperationsStore>()(
 
         for (const nodeId in layer.nodes) {
           const node = layer.nodes[nodeId];
-          if (node.type === 'narrative' && node.operations) {
+          if (supportsOperations(node) && node.operations) {
             const operationExists = node.operations.some((op) => op.id === operationId);
             if (operationExists) {
               commandManager.toggleOperation(nodeId, operationId);
@@ -208,7 +209,7 @@ export const useOperationsStore = create<OperationsStore>()(
         const {currentGraphId, layers} = graphStore;
         const layer = layers[currentGraphId];
 
-        if (layer && layer.nodes[nodeId] && layer.nodes[nodeId].type === 'narrative') {
+        if (layer && layer.nodes[nodeId] && supportsOperations(layer.nodes[nodeId])) {
           const narrativeNode = layer.nodes[nodeId];
 
           // Если у узла есть операции, возвращаем их
@@ -235,7 +236,7 @@ export const useOperationsStore = create<OperationsStore>()(
           // Проходим по всем узлам слоя
           for (const nodeId in layer.nodes) {
             const node = layer.nodes[nodeId];
-            if (node.type === 'narrative' && node.operations && node.operations.length > 0) {
+            if (supportsOperations(node) && node.operations && node.operations.length > 0) {
               // Находим операции, которые нужно удалить
               const originalCount = node.operations.length;
               const filteredOperations = node.operations.filter((op) => {
@@ -301,7 +302,7 @@ export const useOperationsStore = create<OperationsStore>()(
         // Ищем операцию в нарративных узлах
         for (const nodeId in layer.nodes) {
           const node = layer.nodes[nodeId];
-          if (node.type === 'narrative' && node.operations) {
+          if (supportsOperations(node) && node.operations) {
             operation = node.operations.find((op) => op.id === operationId);
             if (operation) break;
           }
@@ -418,7 +419,7 @@ export const useOperationsStore = create<OperationsStore>()(
         // Ищем операцию в нарративных узлах
         for (const nodeId in layer.nodes) {
           const node = layer.nodes[nodeId];
-          if (node.type === 'narrative' && node.operations) {
+          if (supportsOperations(node) && node.operations) {
             operation = node.operations.find((op) => op.id === operationId);
             if (operation) break;
           }

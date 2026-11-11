@@ -4,6 +4,7 @@ import {ChevronDownIcon, ChevronUpIcon, LightningBoltIcon, PlusIcon} from '@radi
 import {Button} from '@radix-ui/themes';
 import cls from 'classnames';
 import {useTranslation} from 'react-i18next';
+import {supportsOperations} from 'src/utils/nodeOperations';
 
 import {useGraphStore} from '@store/useGraphStore';
 import {useOperationsStore} from '@store/useOperationsStore';
@@ -19,12 +20,14 @@ interface OperationsListProps {
   className?: string;
   isExpanded?: boolean;
   onExpandToggle?: (expanded: boolean) => void;
+  /** Initial state when uncontrolled (choice nodes start collapsed) */
+  defaultExpanded?: boolean;
 }
 
-export const OperationsList = ({nodeId, className, isExpanded: propIsExpanded, onExpandToggle}: OperationsListProps) => {
+export const OperationsList = ({nodeId, className, isExpanded: propIsExpanded, onExpandToggle, defaultExpanded = true}: OperationsListProps) => {
   const {t} = useTranslation();
   // Используем состояние из пропсов, если оно передано, иначе локальное состояние
-  const [localIsExpanded, setLocalIsExpanded] = useState(true);
+  const [localIsExpanded, setLocalIsExpanded] = useState(defaultExpanded);
 
   // Определяем, какое состояние использовать
   const isControlled = propIsExpanded !== undefined;
@@ -40,7 +43,7 @@ export const OperationsList = ({nodeId, className, isExpanded: propIsExpanded, o
   const rawOperations = useGraphStore((state) => {
     const layer = state.layers[state.currentGraphId];
     const node = layer?.nodes[nodeId];
-    return node?.type === 'narrative' ? node.operations : undefined;
+    return supportsOperations(node) ? node.operations : undefined;
   });
 
   // Мемоизируем отсортированный массив операций

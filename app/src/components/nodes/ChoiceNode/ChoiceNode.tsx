@@ -14,6 +14,7 @@ import ArrowHandle from '@components/nodes/ArrowHandle/ArrowHandle';
 import NewObjDialog from '@components/nodes/NewObjDialog/NewObjDialog';
 
 import {getHotkeyWithModifier} from '../../../utils/keyboardModifiers';
+import {OperationsList} from '../NarrativeNode/OperationsList';
 import {AISkeleton} from '../shared/AISkeleton';
 import {EditableText, StaticText} from '../shared/EditableContent';
 import {NodeHint} from '../shared/NodeHint';
@@ -111,6 +112,11 @@ const ChoiceNode = memo(({selected, style, data, id}: ChoiceNodeProps) => {
             />
           )}
         </div>
+      </div>
+
+      {/* Operations applied when the player picks this choice (same editor as narrative nodes) */}
+      <div className={cls(s.operations, 'nodrag')} onClick={(e) => e.stopPropagation()}>
+        <OperationsList nodeId={id} defaultExpanded={false} />
       </div>
 
       {shouldShowDialog && (

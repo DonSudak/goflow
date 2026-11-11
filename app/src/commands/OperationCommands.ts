@@ -1,3 +1,5 @@
+import {supportsOperations} from 'src/utils/nodeOperations';
+
 import {useGraphStore} from '../store/useGraphStore';
 import {useOperationsStore} from '../store/useOperationsStore';
 import {VariableOperation} from '../types/variables';
@@ -28,7 +30,7 @@ export class CreateOperationCommand implements Command {
     const layer = layers[currentGraphId];
     const node = layer?.nodes[this.nodeId];
 
-    if (node?.type === 'narrative') {
+    if (supportsOperations(node)) {
       const updatedOperations = [...(node.operations || []), this.operation];
       const updatedNode = {...node, operations: updatedOperations};
       graphStore.updateNodeWithOperations(this.nodeId, updatedNode);
@@ -45,7 +47,7 @@ export class CreateOperationCommand implements Command {
     const layer = layers[currentGraphId];
     const node = layer?.nodes[this.nodeId];
 
-    if (node?.type === 'narrative') {
+    if (supportsOperations(node)) {
       const updatedOperations = (node.operations || []).filter((op) => op.id !== this.operation.id);
       const updatedNode = {...node, operations: updatedOperations};
       graphStore.updateNodeWithOperations(this.nodeId, updatedNode);
@@ -83,7 +85,7 @@ export class UpdateOperationCommand implements Command {
     const {currentGraphId, layers} = graphStore;
     const layer = layers[currentGraphId];
     const node = layer?.nodes[this.nodeId];
-    if (node?.type === 'narrative') {
+    if (supportsOperations(node)) {
       this.originalOperation = (node.operations || []).find((op) => op.id === this.operationId);
     }
   }
@@ -96,7 +98,7 @@ export class UpdateOperationCommand implements Command {
     const layer = layers[currentGraphId];
     const node = layer?.nodes[this.nodeId];
 
-    if (node?.type === 'narrative') {
+    if (supportsOperations(node)) {
       const updatedOperations = (node.operations || []).map((op) => (op.id === this.operationId ? {...op, ...this.updates} : op));
       const updatedNode = {...node, operations: updatedOperations};
       graphStore.updateNodeWithOperations(this.nodeId, updatedNode);
@@ -115,7 +117,7 @@ export class UpdateOperationCommand implements Command {
     const layer = layers[currentGraphId];
     const node = layer?.nodes[this.nodeId];
 
-    if (node?.type === 'narrative') {
+    if (supportsOperations(node)) {
       const updatedOperations = (node.operations || []).map((op) => (op.id === this.operationId ? this.originalOperation! : op));
       const updatedNode = {...node, operations: updatedOperations};
       graphStore.updateNodeWithOperations(this.nodeId, updatedNode);
@@ -156,7 +158,7 @@ export class ToggleOperationCommand implements Command {
     const {currentGraphId, layers} = graphStore;
     const layer = layers[currentGraphId];
     const node = layer?.nodes[this.nodeId];
-    if (node?.type === 'narrative') {
+    if (supportsOperations(node)) {
       const operation = (node.operations || []).find((op) => op.id === this.operationId);
       if (operation) {
         this.originalValue = operation.enabled;
@@ -172,7 +174,7 @@ export class ToggleOperationCommand implements Command {
     const layer = layers[currentGraphId];
     const node = layer?.nodes[this.nodeId];
 
-    if (node?.type === 'narrative') {
+    if (supportsOperations(node)) {
       // Получаем текущее состояние операции и инвертируем его
       const currentOperation = (node.operations || []).find((op) => op.id === this.operationId);
       if (!currentOperation) return;
@@ -196,7 +198,7 @@ export class ToggleOperationCommand implements Command {
     const layer = layers[currentGraphId];
     const node = layer?.nodes[this.nodeId];
 
-    if (node?.type === 'narrative') {
+    if (supportsOperations(node)) {
       const updatedOperations = (node.operations || []).map((op) => (op.id === this.operationId ? {...op, enabled: this.originalValue ?? false} : op));
       const updatedNode = {...node, operations: updatedOperations};
       graphStore.updateNodeWithOperations(this.nodeId, updatedNode);
@@ -222,7 +224,7 @@ export class ToggleOperationCommand implements Command {
     const layer = layers[currentGraphId];
     const node = layer?.nodes[this.nodeId];
 
-    if (node?.type === 'narrative') {
+    if (supportsOperations(node)) {
       const currentOperation = (node.operations || []).find((op) => op.id === this.operationId);
       if (currentOperation) {
         const newValue = !currentOperation.enabled;
@@ -258,7 +260,7 @@ export class ToggleAllOperationsCommand implements Command {
     const {currentGraphId, layers} = graphStore;
     const layer = layers[currentGraphId];
     const node = layer?.nodes[this.nodeId];
-    if (node?.type === 'narrative' && node.operations) {
+    if (supportsOperations(node) && node.operations) {
       this.originalStates = node.operations.map((op) => ({id: op.id, enabled: op.enabled}));
     }
   }
@@ -269,7 +271,7 @@ export class ToggleAllOperationsCommand implements Command {
     const layer = layers[currentGraphId];
     const node = layer?.nodes[this.nodeId];
 
-    if (node?.type === 'narrative') {
+    if (supportsOperations(node)) {
       const updatedOperations = (node.operations || []).map((op) => ({...op, enabled: this.newState}));
       const updatedNode = {...node, operations: updatedOperations};
       graphStore.updateNodeWithOperations(this.nodeId, updatedNode);
@@ -286,7 +288,7 @@ export class ToggleAllOperationsCommand implements Command {
     const layer = layers[currentGraphId];
     const node = layer?.nodes[this.nodeId];
 
-    if (node?.type === 'narrative') {
+    if (supportsOperations(node)) {
       const updatedOperations = (node.operations || []).map((op) => {
         const original = this.originalStates.find((s) => s.id === op.id);
         return {...op, enabled: original ? original.enabled : op.enabled};
@@ -325,7 +327,7 @@ export class DeleteOperationCommand implements Command {
 
     for (const nodeId in graph.nodes) {
       const node = graph.nodes[nodeId];
-      if (node.type === 'narrative' && node.operations) {
+      if (supportsOperations(node) && node.operations) {
         const op = node.operations.find((o: any) => o.id === this.operationId);
         if (op) {
           this.nodeId = nodeId;
@@ -344,7 +346,7 @@ export class DeleteOperationCommand implements Command {
     const graph = layers[currentGraphId];
     const node = graph.nodes[this.nodeId];
 
-    if (node.type === 'narrative' && node.operations) {
+    if (supportsOperations(node) && node.operations) {
       const newOperations = node.operations.filter((op: any) => op.id !== this.operationId);
       const updatedNode = {...node, operations: newOperations};
       useGraphStore.getState().updateNodeWithOperations(this.nodeId, updatedNode);
@@ -363,7 +365,7 @@ export class DeleteOperationCommand implements Command {
     const graph = layers[currentGraphId];
     const node = graph.nodes[this.nodeId];
 
-    if (node.type === 'narrative') {
+    if (supportsOperations(node)) {
       const newOperations = [...(node.operations || []), this.deletedOperation];
       // Сортируем операции по order, если он есть
       if (this.deletedOperation.order !== undefined) {

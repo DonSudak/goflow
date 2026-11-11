@@ -6,6 +6,7 @@ import {ProjectDataService} from '@services/projectDataService';
 import {OperationTarget, OperationTargetType, OperationType, VariableOperation} from '@types-folder/variables';
 import cls from 'classnames';
 import {useTranslation} from 'react-i18next';
+import {supportsOperations} from 'src/utils/nodeOperations';
 
 import {useGameManifestStore} from '@store/useGameManifestStore';
 import {useGraphStore} from '@store/useGraphStore';
@@ -56,7 +57,7 @@ export const OperationMasterDialog = ({isOpen, nodeId, operationId, onClose}: Op
   // Находим текущий узел и его операции
   const currentLayer = layers[currentGraphId];
   const currentNode = currentLayer?.nodes[nodeId];
-  const nodeOperations = currentNode?.type === 'narrative' ? currentNode.operations || [] : [];
+  const nodeOperations = supportsOperations(currentNode) ? currentNode.operations || [] : [];
 
   // Проверяем наличие переменных
   const hasVariables = variables.length > 0;

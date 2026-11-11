@@ -3,6 +3,7 @@ import type {AppRouterInstance} from 'next/dist/shared/lib/app-router-context.sh
 import {Connection, NodeChange} from '@xyflow/react';
 import i18n from 'i18next';
 import {nanoid} from 'nanoid';
+import {supportsOperations} from 'src/utils/nodeOperations';
 
 import {getNotificationManager} from '../components/Notifications';
 import {trackObjectCreation} from '../services/analytics';
@@ -728,6 +729,10 @@ class PasteNodesCommand implements Command {
       const newNode = JSON.parse(JSON.stringify(node)) as ChoiceNode | NarrativeNode | NoteNode | LayerNode;
       newNode.id = newId;
       newNode.coordinates = nodeWithNewPosition.coordinates;
+      // Operations belong to the pasted copy (narrative and choice nodes): fresh ids, new owner
+      if (supportsOperations(newNode) && newNode.operations) {
+        newNode.operations = newNode.operations.map((op) => ({...op, id: nanoid(), nodeId: newId}));
+      }
 
       // Особая обработка для слоев
       if (node.type === 'layer') {
