@@ -796,6 +796,10 @@
         "label": "Dialogic for Godot",
         "description": "Export story for Godot Engine using Dialogic plugin"
       },
+      "dialogue_manager": {
+        "label": "Godot — Dialogue Manager (Useless Tycoon)",
+        "description": "Export a .dialogue script for Dialogue Manager 4.2 using the Useless Tycoon StoryBridge"
+      },
       "unity": {
         "label": "Unity (coming soon)",
         "description": "Export for Unity in development"
@@ -824,7 +828,9 @@
       "renpy_export_failed": "Ren'Py export error: ",
       "renpy_export_error": "An error occurred during Ren'Py export",
       "dialogic_export_failed": "Dialogic export error: ",
-      "dialogic_export_error": "An error occurred during Dialogic export"
+      "dialogic_export_error": "An error occurred during Dialogic export",
+      "dialogue_manager_export_failed": "Dialogue Manager export error: ",
+      "dialogue_manager_export_error": "An error occurred during Dialogue Manager export"
     }
   },
   "auth": {

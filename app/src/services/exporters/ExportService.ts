@@ -7,6 +7,7 @@ import JSZip from 'jszip';
 
 import {StoryData} from '../../playback/engine/core/StoryData';
 import {DialogicCodeGenerator} from './implementations/DialogicCodeGenerator';
+import {DialogueManagerCodeGenerator} from './implementations/DialogueManagerCodeGenerator';
 import {RenpyCodeGeneratorV5} from './implementations/RenpyCodeGeneratorV5';
 import {StoryProcessor} from './implementations/StoryProcessor';
 import {ExportConfig, ExportFormat, ExportResult, ExportStats, ICodeGenerator, IExportService, IExportServiceDependencies, IStoryProcessor} from './interfaces/exportInterfaces';
@@ -185,6 +186,11 @@ export class ExportService implements IExportService {
           ...baseConfig,
           generateReadme: false // Dialogic files are self-contained
         };
+      case ExportFormat.DIALOGUE_MANAGER:
+        return {
+          ...baseConfig,
+          generateReadme: false // single .dialogue file
+        };
       default:
         return baseConfig;
     }
@@ -205,6 +211,7 @@ export class ExportService implements IExportService {
   private registerDefaultGenerators(): void {
     this.registerCodeGenerator(new RenpyCodeGeneratorV5());
     this.registerCodeGenerator(new DialogicCodeGenerator());
+    this.registerCodeGenerator(new DialogueManagerCodeGenerator());
   }
 
   /**
