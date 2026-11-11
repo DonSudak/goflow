@@ -1,0 +1,381 @@
+{
+	"activities": {
+		"choose_neutral": {
+			"display_name": "[PH] Нейтральный путь — скоро"
+		},
+		"choose_streamer": {
+			"display_name": "[PH] Стример — скоро"
+		},
+		"choose_university": {
+			"display_name": "[PH] Поступить в ВУЗ"
+		},
+		"choose_work": {
+			"display_name": "[PH] Работа/шабашки — скоро"
+		},
+		"club": {
+			"display_name": "[PH] Кружок"
+		},
+		"coursework": {
+			"display_name": "[PH] Курсовая"
+		},
+		"exam": {
+			"display_name": "[PH] Зачёт"
+		},
+		"lecture": {
+			"display_name": "[PH] Пара"
+		},
+		"party": {
+			"display_name": "[PH] Вечеринка в общаге"
+		},
+		"seminar": {
+			"display_name": "[PH] Семинар"
+		},
+		"sleep": {
+			"display_name": "[PH] Поспать"
+		}
+	},
+	"characters": {
+		"mira": {
+			"age": 22,
+			"dialogue_path": "",
+			"display_name": "[PH] Мира",
+			"expressions": [
+				"neutral",
+				"smile"
+			],
+			"gender": "female",
+			"outfits": [],
+			"romanceable": true,
+			"speaker": "Мира"
+		},
+		"sasha": {
+			"age": 20,
+			"dialogue_path": "",
+			"display_name": "[PH] Саша",
+			"expressions": [
+				"neutral",
+				"smile"
+			],
+			"gender": "female",
+			"outfits": [],
+			"romanceable": true,
+			"speaker": "Саша"
+		}
+	},
+	"dialogues": {
+		"res://content/dialogue/bar.dialogue": {
+			"cues": [
+				"bar_meet"
+			]
+		},
+		"res://content/dialogue/intro.dialogue": {
+			"cues": [
+				"start"
+			]
+		},
+		"res://content/dialogue/university.dialogue": {
+			"cues": [
+				"classmate"
+			]
+		}
+	},
+	"flags": [],
+	"game_keys": {
+		"calendar.day": {
+			"initial": 1,
+			"mirrored": true,
+			"module": "calendar",
+			"type": "int",
+			"writable": false
+		},
+		"calendar.slot": {
+			"initial": 0,
+			"mirrored": true,
+			"module": "calendar",
+			"type": "int",
+			"writable": false
+		},
+		"gallery.items": {
+			"initial": [],
+			"mirrored": true,
+			"module": "gallery",
+			"type": "array",
+			"writable": false
+		},
+		"hero.appearance": {
+			"initial": {
+
+			},
+			"mirrored": true,
+			"module": "hero",
+			"type": "object",
+			"writable": false
+		},
+		"hero.gender": {
+			"initial": "",
+			"mirrored": true,
+			"module": "hero",
+			"type": "string",
+			"writable": false
+		},
+		"household.comfort": {
+			"initial": 0.0,
+			"mirrored": true,
+			"module": "household",
+			"type": "float",
+			"writable": true
+		},
+		"household.money": {
+			"initial": 60.0,
+			"mirrored": true,
+			"module": "household",
+			"type": "float",
+			"writable": true
+		},
+		"inventory.alcohol": {
+			"initial": 0,
+			"mirrored": true,
+			"module": "inventory",
+			"type": "int",
+			"writable": true
+		},
+		"inventory.snacks": {
+			"initial": 0,
+			"mirrored": true,
+			"module": "inventory",
+			"type": "int",
+			"writable": true
+		},
+		"life_path.path_id": {
+			"initial": "prologue",
+			"mirrored": true,
+			"module": "life_path",
+			"type": "string",
+			"writable": false
+		},
+		"relationships.affection.mira": {
+			"initial": 0.0,
+			"mirrored": false,
+			"module": "relationships",
+			"read_key": "relationships.mira.affection",
+			"type": "float",
+			"writable": true
+		},
+		"relationships.affection.sasha": {
+			"initial": 0.0,
+			"mirrored": false,
+			"module": "relationships",
+			"read_key": "relationships.sasha.affection",
+			"type": "float",
+			"writable": true
+		},
+		"relationships.mira.affection": {
+			"initial": 0.0,
+			"mirrored": true,
+			"module": "relationships",
+			"type": "float",
+			"writable": false
+		},
+		"relationships.mira.age": {
+			"initial": 22,
+			"mirrored": true,
+			"module": "relationships",
+			"type": "int",
+			"writable": false
+		},
+		"relationships.mira.available": {
+			"initial": false,
+			"mirrored": true,
+			"module": "relationships",
+			"type": "bool",
+			"writable": false
+		},
+		"relationships.mira.stage": {
+			"initial": "",
+			"mirrored": true,
+			"module": "relationships",
+			"type": "string",
+			"writable": false
+		},
+		"relationships.sasha.affection": {
+			"initial": 0.0,
+			"mirrored": true,
+			"module": "relationships",
+			"type": "float",
+			"writable": false
+		},
+		"relationships.sasha.age": {
+			"initial": 20,
+			"mirrored": true,
+			"module": "relationships",
+			"type": "int",
+			"writable": false
+		},
+		"relationships.sasha.available": {
+			"initial": false,
+			"mirrored": true,
+			"module": "relationships",
+			"type": "bool",
+			"writable": false
+		},
+		"relationships.sasha.stage": {
+			"initial": "",
+			"mirrored": true,
+			"module": "relationships",
+			"type": "string",
+			"writable": false
+		},
+		"run_flow.stage": {
+			"initial": "prologue",
+			"mirrored": true,
+			"module": "run_flow",
+			"type": "string",
+			"writable": false
+		},
+		"scenes.current": {
+			"initial": {
+
+			},
+			"mirrored": true,
+			"module": "scenes",
+			"type": "object",
+			"writable": false
+		},
+		"success_threat.grades": {
+			"initial": 0.0,
+			"mirrored": false,
+			"module": "success_threat",
+			"paths": [
+				"university"
+			],
+			"read_key": "success_threat.sources",
+			"type": "float",
+			"writable": true
+		},
+		"success_threat.path_id": {
+			"initial": "prologue",
+			"mirrored": true,
+			"module": "success_threat",
+			"type": "string",
+			"writable": false
+		},
+		"success_threat.sources": {
+			"initial": {
+
+			},
+			"mirrored": true,
+			"module": "success_threat",
+			"type": "object",
+			"writable": false
+		},
+		"uselessness.points": {
+			"initial": 0.0,
+			"mirrored": false,
+			"module": "uselessness",
+			"read_key": "uselessness.value",
+			"type": "float",
+			"writable": true
+		},
+		"uselessness.value": {
+			"initial": 0.0,
+			"mirrored": true,
+			"module": "uselessness",
+			"type": "float",
+			"writable": false
+		},
+		"world.location": {
+			"initial": "dorm",
+			"mirrored": true,
+			"module": "world",
+			"type": "string",
+			"writable": false
+		},
+		"world.present": {
+			"initial": [],
+			"mirrored": true,
+			"module": "world",
+			"type": "array",
+			"writable": false
+		}
+	},
+	"items": {
+		"alcohol": {
+			"display_name": "[PH] Алкоголь"
+		},
+		"snacks": {
+			"display_name": "[PH] Снеки"
+		}
+	},
+	"locations": {
+		"bar": {
+			"display_name": "[PH] Бар «Пустой стакан»"
+		},
+		"dorm": {
+			"display_name": "[PH] Общага"
+		},
+		"university": {
+			"display_name": "[PH] ВУЗ"
+		}
+	},
+	"paths": {
+		"prologue": {
+			"display_name": "[PH] Выбор пути"
+		},
+		"university": {
+			"display_name": "[PH] ВУЗ"
+		}
+	},
+	"scenes": {
+		"mira_night": {
+			"adult": true,
+			"cue": "",
+			"dialogue_path": "",
+			"kind": "CG_UNLOCK",
+			"participants": [
+				"mira"
+			]
+		},
+		"ph_cg": {
+			"adult": false,
+			"cue": "",
+			"dialogue_path": "",
+			"kind": "CG_UNLOCK",
+			"participants": []
+		}
+	},
+	"speakers": [
+		"Директор",
+		"Мира",
+		"Саша",
+		"Я"
+	],
+	"version": 1,
+	"vn": {
+		"backgrounds": [
+			"bar",
+			"graduation"
+		],
+		"cgs": [],
+		"characters": {
+			"mira": {
+				"expressions": [
+					"neutral",
+					"smile"
+				],
+				"outfits": []
+			},
+			"sasha": {
+				"expressions": [
+					"neutral",
+					"smile"
+				],
+				"outfits": []
+			}
+		},
+		"stage_slots": [
+			"center",
+			"left",
+			"right"
+		]
+	}
+}

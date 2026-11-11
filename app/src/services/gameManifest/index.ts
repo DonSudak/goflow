@@ -10,6 +10,8 @@ export interface ManifestGameKey {
   initial: string | number | boolean;
   module: string;
   writable: boolean;
+  /** Mirror key to read when it differs from the effect key (e.g. relationships.affection.mira → relationships.mira.affection). */
+  read_key?: string;
 }
 
 export interface ManifestCharacter {
@@ -35,31 +37,57 @@ export interface GameManifest {
   dialogues: Array<{path: string; cues: string[]}>;
 }
 
-const arr = <T>(v: unknown, map: (x: any) => T | null): T[] => (Array.isArray(v) ? v.map(map).filter((x): x is T => x !== null) : []);
+/** Godot writes sections as objects keyed by id; accept those as well as arrays. */
+const entries = (v: unknown): any[] =>
+  Array.isArray(v)
+    ? v
+    : v && typeof v === 'object'
+      ? Object.entries(v as Record<string, unknown>).map(([id, val]) =>
+          val && typeof val === 'object' && !Array.isArray(val) ? {id, key: id, path: id, ...(val as object)} : {id, key: id, path: id, value: val}
+        )
+      : [];
+const arr = <T>(v: unknown, map: (x: any) => T | null): T[] => entries(v).map(map).filter((x): x is T => x !== null);
+const SCALAR_TYPES = ['bool', 'boolean', 'int', 'integer', 'float', 'number', 'string', 'percent'];
 const str = (v: unknown): string | null => (typeof v === 'string' ? v : v && typeof v === 'object' && typeof (v as any).id === 'string' ? (v as any).id : null);
 
 /** Normalizes raw manifest JSON: tolerates missing/extra fields, keeps only well-formed entries. */
 export const parseGameManifest = (raw: unknown): GameManifest => {
   const m = (raw && typeof raw === 'object' ? raw : {}) as Record<string, any>;
+  const vn = (m.vn && typeof m.vn === 'object' ? m.vn : {}) as Record<string, any>;
   return {
     version: typeof m.version === 'number' ? m.version : 1,
-    game_keys: arr(m.game_keys, (k) =>
-      k && typeof k.key === 'string'
-        ? {key: k.key, type: String(k.type ?? typeof k.initial), initial: k.initial ?? 0, module: String(k.module ?? k.key.split('.')[0]), writable: k.writable !== false}
-        : null
-    ),
+    game_keys: arr(m.game_keys, (k) => {
+      if (!k || typeof k.key !== 'string') return null;
+      const type = String(k.type ?? typeof k.initial);
+      if (!SCALAR_TYPES.includes(type.toLowerCase())) return null; // arrays/objects are not story variables
+      return {
+        key: k.key,
+        type,
+        initial: k.initial ?? 0,
+        module: String(k.module ?? k.key.split('.')[0]),
+        writable: k.writable !== false,
+        ...(typeof k.read_key === 'string' ? {read_key: k.read_key} : {})
+      };
+    }),
     flags: arr(m.flags, str),
     characters: arr(m.characters, (c) =>
-      c && typeof c.id === 'string' ? {id: c.id, name: typeof c.name === 'string' ? c.name : c.id, expressions: arr(c.expressions, str), outfits: arr(c.outfits, str)} : null
+      c && typeof c.id === 'string'
+        ? {
+            id: c.id,
+            name: [c.speaker, c.name, c.display_name].find((n) => typeof n === 'string' && n !== '') ?? c.id,
+            expressions: arr(c.expressions ?? vn.characters?.[c.id]?.expressions, str),
+            outfits: arr(c.outfits ?? vn.characters?.[c.id]?.outfits, str)
+          }
+        : null
     ),
-    backgrounds: arr(m.backgrounds, str),
-    cgs: arr(m.cgs, str),
-    slots: arr(m.slots, str),
+    backgrounds: arr(m.backgrounds ?? vn.backgrounds, str),
+    cgs: arr(m.cgs ?? vn.cgs, str),
+    slots: arr(m.slots ?? vn.stage_slots, str),
     scenes: arr(m.scenes, (s) => (typeof s === 'string' ? {id: s} : s && typeof s.id === 'string' ? {id: s.id, name: s.name, adult: s.adult} : null)),
-    locations: Array.isArray(m.locations) ? m.locations : [],
-    items: Array.isArray(m.items) ? m.items : [],
-    activities: Array.isArray(m.activities) ? m.activities : [],
-    paths: arr(m.paths, (p) => (p && typeof p.id === 'string' ? {id: p.id, name: typeof p.name === 'string' ? p.name : p.id} : null)),
+    locations: entries(m.locations),
+    items: entries(m.items),
+    activities: entries(m.activities),
+    paths: arr(m.paths, (p) => (p && typeof p.id === 'string' ? {id: p.id, name: [p.name, p.display_name].find((n) => typeof n === 'string') ?? p.id} : null)),
     dialogues: arr(m.dialogues, (d) => (d && typeof d.path === 'string' ? {path: d.path, cues: arr(d.cues, str)} : null))
   };
 };

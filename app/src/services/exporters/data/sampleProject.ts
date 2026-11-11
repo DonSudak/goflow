@@ -7,7 +7,7 @@ import {Variable, VariableOperation} from '@types-folder/variables';
 
 export const SAMPLE_MANIFEST = {
   version: 1,
-  game_keys: [{key: 'relationships.affection.mira', type: 'float', initial: 0, module: 'relationships', writable: true}],
+  game_keys: [{key: 'relationships.affection.mira', type: 'float', initial: 0, module: 'relationships', writable: true, read_key: 'relationships.mira.affection'}],
   flags: ['met_mira'],
   characters: [{id: 'mira', name: 'Мира', expressions: ['neutral', 'smile'], outfits: ['work']}],
   backgrounds: ['bar'],
