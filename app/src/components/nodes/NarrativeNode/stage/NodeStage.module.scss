@@ -1,0 +1,76 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--gray-a4);
+}
+
+.row {
+  padding: 4px 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 110px;
+}
+
+.label {
+  font-size: 11px;
+  color: var(--gray-11);
+}
+
+.control {
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid var(--gray-a7);
+  border-radius: 4px;
+  background: var(--color-surface);
+  color: var(--gray-12);
+  font-size: 13px;
+
+  &:focus-visible {
+    outline: 2px solid var(--accent-8);
+    outline-offset: 1px;
+  }
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  padding: 4px 8px;
+}
+
+.chip {
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--violet-a3);
+  color: var(--violet-11);
+  font-size: 11px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.adult {
+  background: var(--red-a3);
+  color: var(--red-11);
+}
+
+.edit_button {
+  padding: 1px 6px;
+  border: 1px dashed var(--gray-a7);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--gray-11);
+  font-size: 11px;
+  line-height: 16px;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--accent-8);
+  }
+}

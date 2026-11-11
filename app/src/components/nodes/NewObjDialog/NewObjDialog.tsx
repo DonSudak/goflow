@@ -12,6 +12,7 @@ import {useReactFlow} from '@xyflow/react';
 import {useTranslation} from 'react-i18next';
 import {useAINodeActions} from 'src/hooks/useAINodeActions';
 import {useNewObjDialogActions} from 'src/hooks/useNewObjDialogActions';
+import {isAIEnabled} from 'src/utils/edition';
 
 import {useCanvasStore} from '@store/useCanvasStore';
 import {useEditingStore} from '@store/useEditingStore';
@@ -124,7 +125,7 @@ const NewObjDialog = ({nodeId, handleId, onBeforeCreate}: NewObjDialogProps) => 
         return; // Выходим после обработки
       }
 
-      if (hasPlatformModifier && e.key === '4') {
+      if (hasPlatformModifier && e.key === '4' && isAIEnabled()) {
         e.preventDefault();
         e.stopPropagation(); // Важно остановить всплытие события
         handleNextNodeV2(); // Следующий узел
@@ -210,29 +211,33 @@ const NewObjDialog = ({nodeId, handleId, onBeforeCreate}: NewObjDialogProps) => 
           <StackIcon className={s.icon} /> {t('new_obj_dialog.layer', 'Layer')} <kbd>{getHotkeyWithModifier('3')}</kbd>
         </Button>
 
-        <Text className={s.text} size='1' color='gray' weight='bold' style={{marginTop: '16px'}}>
-          {t('new_obj_dialog.ai_assistant', 'AI-ассистент')}
-        </Text>
+        {isAIEnabled() && (
+          <>
+            <Text className={s.text} size='1' color='gray' weight='bold' style={{marginTop: '16px'}}>
+              {t('new_obj_dialog.ai_assistant', 'AI-ассистент')}
+            </Text>
 
-        <Tooltip
-          content={
-            isTeamPlan && !hasAIAccess
-              ? t('ai_access.no_access_tooltip', 'Нет доступа к ИИ. Обратитесь к администратору команды.')
-              : t('new_obj_dialog.next_node_tooltip', 'Создать следующий узел с помощью ИИ')
-          }
-        >
-          <Button className={`${s.menuItem} ${s.aiButton}`} size='1' color='gray' onClick={createNextNodeV2} disabled={loadingAction !== null || (isTeamPlan && !hasAIAccess)}>
-            {loadingAction === 'NEXT_NODES' ? <UpdateIcon className={s.spinner} /> : <PaddingIcon className={s.lightningIcon} />}
-            <span className={s.buttonText}>{t('new_obj_dialog.next_node', 'Next node')}</span>
-            {nextNodePrice && nextNodePrice !== '—' && (
-              <span className={s.priceTag}>
-                <LightningBoltIcon className={s.priceLightning} />
-                {nextNodePrice}
-              </span>
-            )}
-            {loadingAction !== 'NEXT_NODES' && <kbd>{getHotkeyWithModifier('4')}</kbd>}
-          </Button>
-        </Tooltip>
+            <Tooltip
+              content={
+                isTeamPlan && !hasAIAccess
+                  ? t('ai_access.no_access_tooltip', 'Нет доступа к ИИ. Обратитесь к администратору команды.')
+                  : t('new_obj_dialog.next_node_tooltip', 'Создать следующий узел с помощью ИИ')
+              }
+            >
+              <Button className={`${s.menuItem} ${s.aiButton}`} size='1' color='gray' onClick={createNextNodeV2} disabled={loadingAction !== null || (isTeamPlan && !hasAIAccess)}>
+                {loadingAction === 'NEXT_NODES' ? <UpdateIcon className={s.spinner} /> : <PaddingIcon className={s.lightningIcon} />}
+                <span className={s.buttonText}>{t('new_obj_dialog.next_node', 'Next node')}</span>
+                {nextNodePrice && nextNodePrice !== '—' && (
+                  <span className={s.priceTag}>
+                    <LightningBoltIcon className={s.priceLightning} />
+                    {nextNodePrice}
+                  </span>
+                )}
+                {loadingAction !== 'NEXT_NODES' && <kbd>{getHotkeyWithModifier('4')}</kbd>}
+              </Button>
+            </Tooltip>
+          </>
+        )}
 
         {/* <Button className={s.menuItem} size='1' color='gray' onClick={createStructure} disabled={loadingAction !== null}>
         {loadingAction === 'STRUCTURE_ONLY' ? <UpdateIcon className={s.spinner} /> : <MagicWandIcon className={s.icon} />}

@@ -21,7 +21,7 @@ import {ConnectCommand} from './ConnectCommands';
 import {DeleteEdgeCommand} from './DeleteEdgeCommand';
 import {UpdateEdgeConditionsCommand} from './EdgeCommands';
 import {CreateLayerCommand, DeleteLayerCommand, EditLayerCommand, MoveLayerCommand} from './LayerCommands';
-import {CreateNarrativeNodeCommand, DeleteNarrativeNodeCommand, EditNarrativeNodeCommand, MoveNarrativeNodeCommand} from './NarrativeNodeCommands';
+import {CreateNarrativeNodeCommand, DeleteNarrativeNodeCommand, EditNarrativeNodeCommand, MoveNarrativeNodeCommand, NarrativeEditData} from './NarrativeNodeCommands';
 import {ChangeNoteColorCommand, CreateNoteCommand, DeleteNoteCommand, EditNoteCommand, MoveNoteCommand} from './NoteCommands';
 import {CreateOperationCommand, DeleteOperationCommand, ToggleAllOperationsCommand, ToggleOperationCommand, UpdateOperationCommand} from './OperationCommands';
 import {CreateVariableCommand, DeleteVariableCommand, UpdateVariableCommand} from './VariableCommands';
@@ -1667,7 +1667,7 @@ export class CommandManager {
   /**
    * Редактировать поля нарративного узла
    */
-  public editNarrativeNode(nodeId: string, data: {title: string; text: string; attachedEntities?: string[]}): void {
+  public editNarrativeNode(nodeId: string, data: NarrativeEditData): void {
     const command = new EditNarrativeNodeCommand(nodeId, data, this.projectId);
     this._executeWithProtection(command, `editNarrative:${nodeId}`);
   }

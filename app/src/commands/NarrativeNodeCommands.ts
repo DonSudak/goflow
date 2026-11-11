@@ -5,7 +5,7 @@ import {getNotificationManager} from '@components/Notifications';
 
 import {useCanvasStore} from '../store/useCanvasStore';
 import {useGraphStore} from '../store/useGraphStore';
-import {LayerNode, Link, NarrativeNode} from '../types/nodes';
+import {LayerNode, Link, NarrativeNode, NodeStage} from '../types/nodes';
 import {getCurrentTimelineId} from '../utils/getCurrentTimelineId';
 import {buildEditorPath} from '../utils/navigation';
 import {Command} from './CommandInterface';
@@ -824,13 +824,16 @@ export class MoveNarrativeNodeCommand implements Command {
   }
 }
 
+/** Editable narrative node fields (stage = Useless Tycoon stage directions). */
+export type NarrativeEditData = {title: string; text: string; attachedEntities?: string[]; stage?: NodeStage};
+
 /**
  * Команда для редактирования полей нарративного узла
  */
 export class EditNarrativeNodeCommand implements Command {
   private nodeId: string;
-  private oldData: {title: string; text: string; attachedEntities?: string[]};
-  private newData: {title: string; text: string; attachedEntities?: string[]};
+  private oldData: NarrativeEditData;
+  private newData: NarrativeEditData;
   private graphStore: ReturnType<typeof useGraphStore.getState>;
   private originalLayerId: string; // Сохраняем ID слоя, в котором был изменен узел
   private projectId?: string;
@@ -840,7 +843,7 @@ export class EditNarrativeNodeCommand implements Command {
    * @param nodeId ID узла для редактирования
    * @param newData Новые данные узла
    */
-  constructor(nodeId: string, newData: {title: string; text: string; attachedEntities?: string[]}, projectId?: string) {
+  constructor(nodeId: string, newData: NarrativeEditData, projectId?: string) {
     this.nodeId = nodeId;
     this.newData = newData;
     this.graphStore = useGraphStore.getState();
@@ -851,7 +854,8 @@ export class EditNarrativeNodeCommand implements Command {
     // Сохраняем старые данные для возможности отмены
     const currentGraph = this.graphStore.layers[this.graphStore.currentGraphId];
     const node = currentGraph.nodes[nodeId] as NarrativeNode;
-    this.oldData = {...node.data};
+    // explicit stage key so undo also removes a stage that did not exist before
+    this.oldData = {...node.data, stage: node.data.stage};
   }
 
   /**
@@ -925,7 +929,7 @@ export class EditNarrativeNodeCommand implements Command {
    * Находит и обновляет узел во всех слоях, где он может отображаться
    * @param data Новые данные для узла
    */
-  private updateNodeEverywhere(data: {title: string; text: string}): void {
+  private updateNodeEverywhere(data: NarrativeEditData): void {
     // Обновляем узел в исходном слое
     this.graphStore.updateNodeData(this.nodeId, data);
 

@@ -6,6 +6,7 @@ import {useCurrentProject} from '@hooks/useCurrentProject';
 import {PlayIcon} from '@radix-ui/react-icons';
 import {trackPlaybackLaunch} from '@services/analytics';
 import {ProjectDataService} from '@services/projectDataService';
+import {NarrativeNodeData} from '@types-folder/nodes';
 import {NodeProps} from '@xyflow/react';
 import cls from 'classnames';
 import {useTranslation} from 'react-i18next';
@@ -32,6 +33,7 @@ import {AIFillButton} from './AIFillButton';
 import AttachedEntities from './AttachedEntities';
 import {OperationsList} from './OperationsList';
 import {CARD_STYLES} from './constants';
+import StageBar from './stage/StageBar';
 import {useNarrativeNode} from './useNarrativeNode';
 
 import s from './NarrativeNode.module.scss';
@@ -281,6 +283,9 @@ const NarrativeNode = memo(({selected, style, data, id}: NarrativeNodeProps) => 
             )}
           </div>
         </div>
+
+        {/* Useless Tycoon stage directions */}
+        <StageBar nodeId={id} stage={(data as NarrativeNodeData)?.stage} selected={!!(selected || isSelected)} />
 
         {/* Привязанные сущности - вне .card, чтобы избежать overflow: hidden */}
         <AttachedEntities entityIds={attachedEntities} onRemoveEntity={handleRemoveEntity} maxVisibleRows={1} entitiesPerRow={3} isDragOver={isDragOver} isAILoading={isAILoading} />
