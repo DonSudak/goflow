@@ -7,6 +7,7 @@ import {OperationTarget, OperationTargetType, OperationType, VariableOperation} 
 import cls from 'classnames';
 import {useTranslation} from 'react-i18next';
 
+import {useGameManifestStore} from '@store/useGameManifestStore';
 import {useGraphStore} from '@store/useGraphStore';
 import {useOperationsStore} from '@store/useOperationsStore';
 import {useUIStore} from '@store/useUIStore';
@@ -59,6 +60,7 @@ export const OperationMasterDialog = ({isOpen, nodeId, operationId, onClose}: Op
 
   // Проверяем наличие переменных
   const hasVariables = variables.length > 0;
+  const readOnlyGameKeys = useGameManifestStore((st) => st.readOnlyKeys);
 
   // Текущая операция (если редактируем)
   const currentOperation = operationId ? nodeOperations.find((op: VariableOperation) => op.id === operationId) : null;
@@ -455,14 +457,23 @@ export const OperationMasterDialog = ({isOpen, nodeId, operationId, onClose}: Op
             <Select.Trigger placeholder={t('node_operations.master_var_placeholder', 'Choose variable')} style={{width: '100%'}} />
             <Select.Content className={s.select_content}>
               <Select.Group>
-                {variables.map((variable) => (
-                  <Select.Item key={variable.id} value={variable.id} className={s.select_item}>
-                    <Flex align='center' gap='2'>
-                      <VariableTypeIcon type={variable.type} />
-                      <Text>{variable.name}</Text>
-                    </Flex>
-                  </Select.Item>
-                ))}
+                {variables.map((variable) => {
+                  // game keys with writable=false can be read in conditions but never changed by the story
+                  const readOnly = variable.source === 'game' && readOnlyGameKeys.has(variable.internalName || variable.name);
+                  return (
+                    <Select.Item key={variable.id} value={variable.id} className={s.select_item} disabled={readOnly}>
+                      <Flex align='center' gap='2'>
+                        <VariableTypeIcon type={variable.type} />
+                        <Text>{variable.name}</Text>
+                        {readOnly && (
+                          <Text size='1' color='gray'>
+                            read-only in game
+                          </Text>
+                        )}
+                      </Flex>
+                    </Select.Item>
+                  );
+                })}
               </Select.Group>
             </Select.Content>
           </Select.Root>

@@ -14,3 +14,17 @@ export const playInGodotAction = async (nodeId?: string) => {
     getNotificationManager().showError(error instanceof Error ? error.message : String(error));
   }
 };
+
+/** UI action: "Sync with game" (manifest -> game variables + character entities). */
+export const syncWithGameAction = async () => {
+  const projectId = ProjectDataService.getStatus().currentProjectId;
+  if (!projectId) return;
+  try {
+    const {syncWithGame} = await import('./gameSync');
+    const result = await syncWithGame(projectId);
+    if (!result) getNotificationManager().showError('No game manifest found (Settings → Godot → Godot project)');
+    else getNotificationManager().showSuccess(`Synced with game: ${result.variablesAdded} new variables, ${result.entitiesAdded} new characters`, true, 4000);
+  } catch (error) {
+    getNotificationManager().showError(error instanceof Error ? error.message : String(error));
+  }
+};

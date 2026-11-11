@@ -9,11 +9,11 @@ import {useCurrentRoute} from '@hooks/useCurrentRoute';
 import {useIsTauri} from '@hooks/useIsTauri';
 import {useUnreadComments} from '@hooks/useUnreadComments';
 import {useUserInitialization} from '@hooks/useUserInitialization';
-import {BellIcon, ExclamationTriangleIcon, PlayIcon, RocketIcon, Share2Icon} from '@radix-ui/react-icons';
+import {BellIcon, ExclamationTriangleIcon, PlayIcon, RocketIcon, Share2Icon, UpdateIcon} from '@radix-ui/react-icons';
 import {Button, Dialog, Flex, Separator, Text} from '@radix-ui/themes';
 import {trackPlaybackLaunch} from '@services/analytics';
 import {CommentsAPI} from '@services/comments.api';
-import {playInGodotAction} from '@services/godot/playInGodotAction';
+import {playInGodotAction, syncWithGameAction} from '@services/godot/playInGodotAction';
 import {notificationService} from '@services/notificationService';
 import {ProjectDataService} from '@services/projectDataService';
 import {useReactFlow} from '@xyflow/react';
@@ -370,6 +370,14 @@ const PlayBar = () => {
                 <RocketIcon className={s.icon} />
                 <Text size='2' weight='medium'>
                   Play in Godot
+                </Text>
+              </Button>
+            )}
+            {isDesktop && (
+              <Button size='2' variant='surface' onClick={() => syncWithGameAction()}>
+                <UpdateIcon className={s.icon} />
+                <Text size='2' weight='medium'>
+                  Sync with game
                 </Text>
               </Button>
             )}

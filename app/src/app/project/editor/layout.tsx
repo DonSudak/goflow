@@ -9,6 +9,7 @@ import {isLocal} from 'src/utils/edition';
 import {useUIStore} from '@store/useUIStore';
 
 import {CommandManagerInitializer} from '@components/AppInitializer/CommandManagerInitializer';
+import GameSyncInitializer from '@components/AppInitializer/GameSyncInitializer';
 import DashboardThemeProvider from '@components/Dashboard/ThemeProvider/DashboardThemeProvider';
 import LeftPanel from '@components/LeftPanel/LeftPanel';
 import {NotebookPanel} from '@components/Notebook/NotebookPanel';
@@ -27,6 +28,7 @@ const EditorLayout = ({children}: {children: ReactNode}) => {
       <div className={s.container}>
         <ReactFlowProvider>
           <CommandManagerInitializer />
+          <GameSyncInitializer />
           <PanelGroup direction='horizontal' className={s.panel_group}>
             {isSidebarOpen && (
               <>

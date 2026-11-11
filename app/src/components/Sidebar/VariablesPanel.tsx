@@ -5,10 +5,11 @@ import React, {useEffect, useState} from 'react';
 import {useCurrentProject} from '@hooks/useCurrentProject';
 import {CommitIcon, PlusCircledIcon, ShadowInnerIcon, SwitchIcon, TextIcon, TokensIcon, VercelLogoIcon} from '@radix-ui/react-icons';
 import * as Tabs from '@radix-ui/react-tabs';
-import {Button, ChevronDownIcon, Dialog, Flex, Separator, Switch, Text, TextField} from '@radix-ui/themes';
+import {Badge, Button, ChevronDownIcon, Dialog, Flex, Separator, Switch, Text, TextField} from '@radix-ui/themes';
 import {ProjectDataService} from '@services/projectDataService';
 import {useTranslation} from 'react-i18next';
 
+import {useGameManifestStore} from '@store/useGameManifestStore';
 import {useGraphStore} from '@store/useGraphStore';
 
 import {trackVariableCreation, trackVariableMasterClosed} from '../../services/analytics';
@@ -32,6 +33,8 @@ const VariableFormDialog = ({
 }) => {
   const {t} = useTranslation();
   const isEditMode = !!variableToEdit;
+  // Synced from the game manifest: name and type belong to the game
+  const isGameVariable = variableToEdit?.source === 'game';
   const [name, setName] = useState(variableToEdit?.name || '');
   const [internalName, setInternalName] = useState(variableToEdit?.internalName || '');
   const [type, setType] = useState<VariableType>(variableToEdit?.type || 'integer');
@@ -348,7 +351,12 @@ const VariableFormDialog = ({
                 <Text weight='medium'> {t('variables_form.choose_type', 'Choose variable type')}</Text>
               </Text>
 
-              <Tabs.Root value={type} onValueChange={(value) => handleTypeChange(value as VariableType)} className={s.type_selection_grid}>
+              {isGameVariable && (
+                <Text as='p' size='1' color='gray'>
+                  Game variable — name and type come from the game manifest
+                </Text>
+              )}
+              <Tabs.Root value={type} onValueChange={(value) => !isGameVariable && handleTypeChange(value as VariableType)} className={s.type_selection_grid} activationMode='manual'>
                 <Tabs.List className={s.tabs_list} aria-label={t('variables_form.choose_type', 'Choose variable type')}>
                   <Tabs.Trigger value='integer' className={`${s.type_select_item} ${type === 'integer' ? s.selected : ''}`}>
                     <Text weight='medium'>{t('variables_form.type_integer', 'Integers')}</Text>
@@ -400,7 +408,13 @@ const VariableFormDialog = ({
                   <Text as='label' size='2' weight='medium'>
                     {t('variables_form.custom_name', 'Custom name')}
                   </Text>
-                  <TextField.Root placeholder={t('variables_form.custom_name_placeholder', 'Type any name')} value={name} onChange={(e) => setName(e.target.value)} className={s.variable_form_input} />
+                  <TextField.Root
+                    placeholder={t('variables_form.custom_name_placeholder', 'Type any name')}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className={s.variable_form_input}
+                    readOnly={isGameVariable}
+                  />
                 </Flex>
 
                 <Flex direction='column' gap='1' className={s.variable_form_field}>
@@ -412,6 +426,7 @@ const VariableFormDialog = ({
                     value={internalName}
                     onChange={handleInternalNameChange}
                     className={s.variable_internal_name_input}
+                    readOnly={isGameVariable}
                   />
                 </Flex>
               </Flex>
@@ -528,6 +543,7 @@ const VariableTypeIcon = ({type}: {type: VariableType}) => {
 // Компонент для отображения панели переменных
 const VariablesPanel = ({isAddDialogOpen, onCloseAddDialog}: {isAddDialogOpen: boolean; onCloseAddDialog: () => void}) => {
   const variables = useVariablesStore((s) => s.variables);
+  const readOnlyGameKeys = useGameManifestStore((s) => s.readOnlyKeys);
   const {addVariable, updateVariable} = useVariablesStore();
   const {t} = useTranslation();
 
@@ -564,6 +580,16 @@ const VariablesPanel = ({isAddDialogOpen, onCloseAddDialog}: {isAddDialogOpen: b
                 <Text size='2' className={s.variable_name_text}>
                   {variable.name}
                 </Text>
+                {variable.source === 'game' && (
+                  <Badge
+                    size='1'
+                    color={readOnlyGameKeys.has(variable.internalName || variable.name) ? 'gray' : 'green'}
+                    title={readOnlyGameKeys.has(variable.internalName || variable.name) ? 'Game variable (read-only in the game)' : 'Game variable'}
+                    style={{flexShrink: 0}}
+                  >
+                    {readOnlyGameKeys.has(variable.internalName || variable.name) ? 'game ro' : 'game'}
+                  </Badge>
+                )}
               </div>
               <div className={s.variable_value}>
                 <VariableValue variable={variable} />
