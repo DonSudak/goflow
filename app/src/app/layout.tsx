@@ -12,6 +12,12 @@ import '@radix-ui/themes/styles.css';
 
 import '@styles/globals.scss';
 
+// Inter is bundled (offline desktop app), not loaded from Google Fonts
+import '@fontsource/inter/300.css';
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/500.css';
+import '@fontsource/inter/600.css';
+import '@fontsource/inter/700.css';
 import '@styles/animations.css';
 // Импортируем стили темы для модальных окон и компонентов Dashboard
 import '@styles/dashboard-theme.css';
