@@ -19,7 +19,8 @@ const GodotWriteButton: React.FC<{onDone?: () => void}> = ({onDone}) => {
     setBusy(true);
     try {
       const {writeDialogueToGodot} = await import('@services/godot/godotExport');
-      const {paths} = await writeDialogueToGodot(projectId);
+      const {paths, warnings} = await writeDialogueToGodot(projectId);
+      (await import('@services/godot/notify')).notifyExportWarnings(warnings);
       getNotificationManager().showSuccess(`Written to Godot: ${paths.map((p) => p.split('/').pop()).join(', ')}`, true, 4000);
       onDone?.();
     } catch (error) {

@@ -42,17 +42,20 @@ export const writeDialogueToGodot = async (projectId: string, flush = true) => {
   const files = exportProjectDocument(doc, slug, manifest);
   await fs.mkdir(settings.dialogueDir, {recursive: true});
   const paths: string[] = [];
+  const warnings = files.flatMap((f) => f.warnings.map((w) => `${f.filename}: ${w}`));
   for (const file of files) {
     const path = `${settings.dialogueDir}/${file.filename}`;
     await fs.writeTextFile(path, file.content);
     paths.push(path);
   }
-  return {paths, doc, settings};
+  return {paths, doc, settings, warnings};
 };
 
 /** Exports, then starts `<godot> --path <project> -- --dialogue res://… --cue <cue>` at the node of the current timeline. */
 export const playInGodot = async (projectId: string, nodeId?: string) => {
-  const {paths, doc, settings} = await writeDialogueToGodot(projectId);
+  const {paths, doc, settings, warnings} = await writeDialogueToGodot(projectId);
+  // show export warnings now: the Godot import + launch below can take a while
+  void import('./notify').then((m) => m.notifyExportWarnings(warnings));
   if (!settings.godotProject) throw new Error('Set the Godot project in Settings → Godot first');
 
   // exportProjectDocument writes one file per timeline, in doc.timelines order
@@ -69,7 +72,7 @@ export const playInGodot = async (projectId: string, nodeId?: string) => {
   }
   const dialogueRes = toResPath(settings.godotProject, paths[index]);
   await launchGodot(dialogueRes, cue);
-  return {cue, dialogueRes};
+  return {cue, dialogueRes, warnings};
 };
 
 let autoExportTimer: ReturnType<typeof setTimeout> | undefined;
@@ -79,5 +82,11 @@ export const onProjectSaved = async (projectId: string) => {
   if (ProjectDataService.getStatus().currentProjectId !== projectId || !useGraphStore.getState().hasLoadedFromStorage) return;
   if (!(await getSettings()).autoExport) return;
   clearTimeout(autoExportTimer);
-  autoExportTimer = setTimeout(() => writeDialogueToGodot(projectId, false).catch((e) => console.error('[auto-export]', e)), 1500);
+  autoExportTimer = setTimeout(
+    () =>
+      writeDialogueToGodot(projectId, false)
+        .then(({warnings}) => import('./notify').then((m) => m.notifyExportWarnings(warnings)))
+        .catch((e) => console.error('[auto-export]', e)),
+    1500
+  );
 };
