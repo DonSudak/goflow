@@ -5,6 +5,7 @@ import {PlaybackStorageService} from '../services/playbackStorageService';
 import {ProjectDataService} from '../services/projectDataService';
 import {STORY_KEY, StorageService} from '../services/storageService';
 import {CHOICE_NODE_HEIGHT_CONSTANTS, NODE_HEIGHTS, NODE_WIDTHS} from './constants';
+import {buildPlayPath} from './navigation';
 import {storyStyles} from './storyStyles';
 import {generateStoryHTML} from './storyTemplate';
 
@@ -374,7 +375,7 @@ export const openHTMLPreview = async (projectName: string, teamId: string, start
     let url: string;
     if (currentProjectId) {
       // Используем новую структуру роутинга
-      url = startNodeId ? `/${currentProjectId}/play/${currentTimelineId}?startNode=${startNodeId}` : `/${currentProjectId}/play/${currentTimelineId}`;
+      url = buildPlayPath(currentProjectId, currentTimelineId) + (startNodeId ? `&startNode=${startNodeId}` : '');
     } else {
       // Fallback на старую структуру
       url = startNodeId ? `/play?startNode=${startNodeId}` : '/play';

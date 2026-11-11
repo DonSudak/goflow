@@ -10,6 +10,6 @@ export const getCurrentTimelineId = (): string | null => {
     return null;
   }
 
-  const parsed = parseEditorPath(window.location.pathname);
+  const parsed = parseEditorPath(window.location.pathname + (window.location.search ?? ''));
   return parsed?.timelineId || null;
 };

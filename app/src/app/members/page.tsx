@@ -13,6 +13,7 @@ import {type Project, api} from '@services/api';
 import {TeamCreditBalance} from '@types-folder/billing';
 import {TeamInvitation, TeamMember, TeamRole} from '@types-folder/team';
 import {useTranslation} from 'react-i18next';
+import {buildProjectPath} from 'src/utils/navigation';
 
 import {useTeamStore} from '@store/useTeamStore';
 
@@ -59,7 +60,7 @@ const MembersPageContent: React.FC = () => {
   const {subscriptionInfo} = useTeamSubscription(currentTeam?.id);
 
   const handleProjectSelect = (projectId: string) => {
-    router.push(`/${projectId}`);
+    router.push(buildProjectPath(projectId));
   };
 
   const ROLE_DISPLAY_NAMES: Record<TeamRole, string> = {

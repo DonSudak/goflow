@@ -4,6 +4,8 @@ import {getNotificationManager} from '@components/Notifications';
 
 import {useCanvasStore} from '../store/useCanvasStore';
 import {useGraphStore} from '../store/useGraphStore';
+import {getCurrentTimelineId} from '../utils/getCurrentTimelineId';
+import {buildEditorPath} from '../utils/navigation';
 import {Command, CommandMetadata} from './CommandInterface';
 import {generateAndSaveOperation} from './operationUtils';
 
@@ -166,7 +168,7 @@ export class ConnectCommand implements Command {
       const layerName = this.getLayerName() || this.originalLayerId;
 
       // Формируем путь в зависимости от ID слоя
-      const path = this.originalLayerId === 'root' ? `/${this.projectId}/editor` : `/${this.projectId}/editor/${this.originalLayerId}`;
+      const path = buildEditorPath(this.projectId, getCurrentTimelineId() ?? undefined, this.originalLayerId);
 
       getNotificationManager().showErrorWithNavigation(
         `Can't repeat the connection operation because you are in a different layer. Please navigate to layer "${layerName}" and try again.`,

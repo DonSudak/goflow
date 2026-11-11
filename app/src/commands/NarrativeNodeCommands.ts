@@ -6,6 +6,8 @@ import {getNotificationManager} from '@components/Notifications';
 import {useCanvasStore} from '../store/useCanvasStore';
 import {useGraphStore} from '../store/useGraphStore';
 import {LayerNode, Link, NarrativeNode} from '../types/nodes';
+import {getCurrentTimelineId} from '../utils/getCurrentTimelineId';
+import {buildEditorPath} from '../utils/navigation';
 import {Command} from './CommandInterface';
 import {generateAndSaveOperation} from './operationUtils';
 
@@ -64,7 +66,7 @@ export class CreateNarrativeNodeCommand implements Command {
       const layerName = this.getLayerName() || this.originalLayerId;
 
       // Формируем путь в зависимости от ID слоя
-      const path = this.originalLayerId === 'root' ? `/${this.projectId}/editor` : `/${this.projectId}/editor/${this.originalLayerId}`;
+      const path = buildEditorPath(this.projectId, getCurrentTimelineId() ?? undefined, this.originalLayerId);
 
       getNotificationManager().showErrorWithNavigation(
         `Can't repeat the narrative node creation operation because you are in a different layer. Please navigate to layer "${layerName}" and try again.`,
@@ -321,7 +323,7 @@ export class DeleteNarrativeNodeCommand implements Command {
       const layerName = this.getLayerName() || this.originalLayerId;
 
       // Формируем путь в зависимости от ID слоя
-      const path = this.originalLayerId === 'root' ? `/${this.projectId}/editor` : `/${this.projectId}/editor/${this.originalLayerId}`;
+      const path = buildEditorPath(this.projectId, getCurrentTimelineId() ?? undefined, this.originalLayerId);
 
       getNotificationManager().showErrorWithNavigation(
         `Can't repeat the narrative node deletion operation because you are in a different layer. Please navigate to layer "${layerName}" and try again.`,
@@ -716,7 +718,7 @@ export class MoveNarrativeNodeCommand implements Command {
       const layerName = this.getLayerName() || this.originalLayerId;
 
       // Формируем путь в зависимости от ID слоя
-      const path = this.originalLayerId === 'root' ? `/${this.projectId}/editor` : `/${this.projectId}/editor/${this.originalLayerId}`;
+      const path = buildEditorPath(this.projectId, getCurrentTimelineId() ?? undefined, this.originalLayerId);
 
       getNotificationManager().showErrorWithNavigation(
         `Can't repeat the narrative node movement operation because you are in a different layer. Please navigate to layer "${layerName}" and try again.`,
@@ -875,7 +877,7 @@ export class EditNarrativeNodeCommand implements Command {
       const layerName = this.getLayerName() || this.originalLayerId;
 
       // Формируем путь в зависимости от ID слоя
-      const path = this.originalLayerId === 'root' ? `/${this.projectId}/editor` : `/${this.projectId}/editor/${this.originalLayerId}`;
+      const path = buildEditorPath(this.projectId, getCurrentTimelineId() ?? undefined, this.originalLayerId);
 
       getNotificationManager().showErrorWithNavigation(
         `Can't repeat the narrative node editing operation because you are in a different layer. Please navigate to layer "${layerName}" and try again.`,
@@ -1181,7 +1183,7 @@ export class ConnectNarrativeNodeCommand implements Command {
       const layerName = this.getLayerName() || this.originalLayerId;
 
       // Формируем путь в зависимости от ID слоя
-      const path = this.originalLayerId === 'root' ? `/${this.projectId}/editor` : `/${this.projectId}/editor/${this.originalLayerId}`;
+      const path = buildEditorPath(this.projectId, getCurrentTimelineId() ?? undefined, this.originalLayerId);
 
       getNotificationManager().showErrorWithNavigation(
         `Can't repeat the narrative node connection operation because you are in a different layer. Please navigate to layer "${layerName}" and try again.`,

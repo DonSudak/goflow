@@ -226,13 +226,13 @@ describe('PlaybackStorageService', () => {
     it('должен создать корректный URL для воспроизведения', () => {
       const url = PlaybackStorageService.buildPlaybackUrl('test-project', 'base-timeline', 'node1');
 
-      expect(url).toBe('/test-project/play/base-timeline?playbackId=test-project_base-timeline&startNode=node1');
+      expect(url).toBe('/project/play?project=test-project&timeline=base-timeline&playbackId=test-project_base-timeline&startNode=node1');
     });
 
     it('должен создать URL без startNode если он не указан', () => {
       const url = PlaybackStorageService.buildPlaybackUrl('test-project', 'base-timeline');
 
-      expect(url).toBe('/test-project/play/base-timeline?playbackId=test-project_base-timeline');
+      expect(url).toBe('/project/play?project=test-project&timeline=base-timeline&playbackId=test-project_base-timeline');
     });
   });
 });

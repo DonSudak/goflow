@@ -1,4 +1,4 @@
-import {useParams} from 'next/navigation';
+import {useSearchParams} from 'next/navigation';
 
 import {renderHook} from '@testing-library/react';
 
@@ -6,10 +6,11 @@ import {useCurrentRoute} from '../useCurrentRoute';
 
 // Мокаем useParams из Next.js
 jest.mock('next/navigation', () => ({
-  useParams: jest.fn()
+  useSearchParams: jest.fn()
 }));
 
-const mockUseParams = useParams as jest.MockedFunction<typeof useParams>;
+const mockUseSearchParams = useSearchParams as jest.MockedFunction<typeof useSearchParams>;
+const mockUseParams = {mockReturnValue: (params: Record<string, string> | null) => mockUseSearchParams.mockReturnValue((params ? new URLSearchParams(params) : null) as any)};
 
 describe('useCurrentRoute', () => {
   beforeEach(() => {
@@ -18,9 +19,9 @@ describe('useCurrentRoute', () => {
 
   it('should return all parameters when they are provided', () => {
     mockUseParams.mockReturnValue({
-      project_id: 'project123',
-      timeline_id: 'timeline-1',
-      layer_id: 'layer-456'
+      project: 'project123',
+      timeline: 'timeline-1',
+      layer: 'layer-456'
     });
 
     const {result} = renderHook(() => useCurrentRoute());
@@ -34,8 +35,8 @@ describe('useCurrentRoute', () => {
 
   it('should return undefined timelineId when timeline_id is not provided', () => {
     mockUseParams.mockReturnValue({
-      project_id: 'project123',
-      layer_id: 'layer-456'
+      project: 'project123',
+      layer: 'layer-456'
     });
 
     const {result} = renderHook(() => useCurrentRoute());
@@ -49,8 +50,8 @@ describe('useCurrentRoute', () => {
 
   it('should use "root" when layer_id is not provided', () => {
     mockUseParams.mockReturnValue({
-      project_id: 'project123',
-      timeline_id: 'timeline-1'
+      project: 'project123',
+      timeline: 'timeline-1'
     });
 
     const {result} = renderHook(() => useCurrentRoute());
@@ -64,7 +65,7 @@ describe('useCurrentRoute', () => {
 
   it('should use defaults when only project_id is provided', () => {
     mockUseParams.mockReturnValue({
-      project_id: 'project123'
+      project: 'project123'
     });
 
     const {result} = renderHook(() => useCurrentRoute());
@@ -100,26 +101,25 @@ describe('useCurrentRoute', () => {
     });
   });
 
-  it('should handle array values from params (edge case)', () => {
-    mockUseParams.mockReturnValue({
-      project_id: ['project123', 'extra'],
-      timeline_id: ['timeline-1'],
-      layer_id: ['layer-456', 'extra']
-    } as any);
+  it('should take the last value of repeated query params (edge case)', () => {
+    mockUseSearchParams.mockReturnValue(
+      new URLSearchParams([
+        ['project', 'project123'],
+        ['project', 'extra'],
+        ['timeline', 'timeline-1']
+      ]) as any
+    );
 
     const {result} = renderHook(() => useCurrentRoute());
 
-    // Next.js возвращает массивы как есть, поэтому они не приводятся к string
-    expect(result.current.projectId).toEqual(['project123', 'extra']);
-    expect(result.current.timelineId).toEqual(['timeline-1']); // массив остается массивом
-    expect(result.current.layerId).toEqual(['layer-456', 'extra']); // массив остается массивом
+    expect(result.current).toEqual({projectId: 'extra', timelineId: 'timeline-1', layerId: 'root'});
   });
 
   it('should update when params change', () => {
     mockUseParams.mockReturnValue({
-      project_id: 'project123',
-      timeline_id: 'timeline-1',
-      layer_id: 'layer-456'
+      project: 'project123',
+      timeline: 'timeline-1',
+      layer: 'layer-456'
     });
 
     const {result, rerender} = renderHook(() => useCurrentRoute());
@@ -128,9 +128,9 @@ describe('useCurrentRoute', () => {
 
     // Изменяем параметры
     mockUseParams.mockReturnValue({
-      project_id: 'project123',
-      timeline_id: 'timeline-1',
-      layer_id: 'layer-789'
+      project: 'project123',
+      timeline: 'timeline-1',
+      layer: 'layer-789'
     });
 
     rerender();

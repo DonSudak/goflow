@@ -10,6 +10,7 @@ import {trackBillingCreditsPurchase, trackBillingOpen, trackBillingSubscribe} fr
 import {api} from '@services/api';
 import {CreditBalance, Purchase, StripeProduct, Subscription} from '@types-folder/billing';
 import {useTranslation} from 'react-i18next';
+import {buildEditorPath} from 'src/utils/navigation';
 
 import {useTeamStore} from '@store/useTeamStore';
 import useUserStore from '@store/useUserStore';
@@ -191,7 +192,7 @@ const BillingPageContent: React.FC = () => {
 
   // Обработчик выбора проекта - переход в редактор
   const handleProjectSelect = (projectId: string) => {
-    router.push(`/${projectId}/editor`);
+    router.push(buildEditorPath(projectId));
   };
 
   // Компонент боковой панели проектов

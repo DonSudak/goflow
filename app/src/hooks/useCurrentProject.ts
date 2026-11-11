@@ -1,10 +1,9 @@
 'use client';
 
-import {useParams} from 'next/navigation';
+import {useRouteParams} from './useCurrentRoute';
 
 export function useCurrentProject() {
-  const params = useParams();
-  const projectId = params?.project_id as string | undefined;
+  const projectId = useRouteParams().project;
 
   return {
     projectId,

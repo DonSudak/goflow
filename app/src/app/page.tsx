@@ -1,5 +1,13 @@
-import {redirect} from 'next/navigation';
+'use client';
 
-export default function HomePage() {
-  redirect('/projects');
-}
+import {useEffect} from 'react';
+
+import {useRouter} from 'next/navigation';
+
+const HomePage = () => {
+  const router = useRouter();
+  useEffect(() => router.replace('/projects'), [router]);
+  return null;
+};
+
+export default HomePage;

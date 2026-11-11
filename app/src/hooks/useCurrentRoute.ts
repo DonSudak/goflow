@@ -1,15 +1,20 @@
-import {useParams} from 'next/navigation';
+import {useSearchParams} from 'next/navigation';
+
+/**
+ * Route params live in the query string (`/project/editor?project=..&timeline=..&layer=..`)
+ * so that `next build` can emit a static export (no dynamic segments).
+ */
+export const useRouteParams = (): {project?: string; timeline?: string; layer?: string; type?: string; entity?: string; token?: string} => {
+  const params = useSearchParams();
+  return Object.fromEntries(params?.entries() ?? []);
+};
 
 export const useCurrentRoute = () => {
-  const params = useParams();
-
-  const projectId = params?.project_id as string;
-  const timelineId = params?.timeline_id as string;
-  const layerId = (params?.layer_id as string) || 'root';
+  const params = useRouteParams();
 
   return {
-    projectId,
-    timelineId,
-    layerId
+    projectId: params.project as string,
+    timelineId: params.timeline as string,
+    layerId: params.layer || 'root'
   };
 };

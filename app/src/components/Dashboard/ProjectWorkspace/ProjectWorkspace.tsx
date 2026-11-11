@@ -11,6 +11,7 @@ import {Entity, EntityType} from '@types-folder/entities';
 import {useTranslation} from 'react-i18next';
 import {useCanvasStore} from 'src/store/useCanvasStore';
 import {useGraphStore} from 'src/store/useGraphStore';
+import {isLocal} from 'src/utils/edition';
 import {createEmptyProjectState} from 'src/utils/projectStateHelpers';
 
 import {EntitiesWorkspace} from '@components/Dashboard/Entities/EntitiesWorkspace';
@@ -293,7 +294,7 @@ const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({
       useCanvasStore.getState().setEdges([]);
 
       // Переходим в редактор - EditorPage сам выберет активный таймлайн
-      router.push(`/${selectedProjectId}/editor`);
+      router.push(buildEditorPath(selectedProjectId));
     } catch (error) {
       console.error('Error opening editor:', error);
       setIsLoading(false);
@@ -501,14 +502,16 @@ const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({
             </div>
 
             {/* Дополнительные разделы */}
-            <div className={s.navButton}>
-              <button className={`${s.navButton} ${activeSection === 'notebook' ? s.navButtonActive : ''}`} onClick={() => setActiveSection('notebook')}>
-                <div className={s.navButtonContent}>
-                  <Pencil2Icon className={s.navIcon} />
-                  <span>{t('dashboard.workspace.notebook', 'Блокнот')}</span>
-                </div>
-              </button>
-            </div>
+            {!isLocal() && (
+              <div className={s.navButton}>
+                <button className={`${s.navButton} ${activeSection === 'notebook' ? s.navButtonActive : ''}`} onClick={() => setActiveSection('notebook')}>
+                  <div className={s.navButtonContent}>
+                    <Pencil2Icon className={s.navIcon} />
+                    <span>{t('dashboard.workspace.notebook', 'Блокнот')}</span>
+                  </div>
+                </button>
+              </div>
+            )}
           </div>
         )}
 

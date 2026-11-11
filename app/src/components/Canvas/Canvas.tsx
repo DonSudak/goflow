@@ -2,7 +2,7 @@
 
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
-import {useParams, useRouter} from 'next/navigation';
+import {useRouter} from 'next/navigation';
 
 import {useCurrentProject} from '@hooks/useCurrentProject';
 import {useCurrentRoute} from '@hooks/useCurrentRoute';
@@ -117,7 +117,6 @@ const getNodeColor = (node: Node) => {
  * 3. Разделяет логику на отдельные хуки с четкой ответственностью
  */
 const Canvas = () => {
-  const params = useParams();
   const router = useRouter();
   const {projectId} = useCurrentProject();
   const teamId = useReliableTeamId();

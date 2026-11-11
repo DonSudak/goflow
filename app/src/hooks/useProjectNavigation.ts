@@ -1,6 +1,9 @@
 import {useCallback} from 'react';
 
-import {useParams, usePathname, useRouter} from 'next/navigation';
+import {usePathname, useRouter} from 'next/navigation';
+
+import {buildEntitiesPath, buildEntityPath, buildEntityTypePath, buildProjectPath} from '../utils/navigation';
+import {useRouteParams} from './useCurrentRoute';
 
 export interface ProjectRouteParams {
   projectId: string;
@@ -21,13 +24,13 @@ export interface ProjectNavigation {
 }
 
 export const useProjectNavigation = (): ProjectNavigation => {
-  const params = useParams();
+  const params = useRouteParams();
   const router = useRouter();
   const pathname = usePathname();
 
-  const projectId = params.project_id as string;
-  const typeId = params.type_id as string | undefined;
-  const entityId = params.entity_id as string | undefined;
+  const projectId = params.project as string;
+  const typeId = params.type;
+  const entityId = params.entity;
 
   const routeParams: ProjectRouteParams = {
     projectId,
@@ -40,37 +43,37 @@ export const useProjectNavigation = (): ProjectNavigation => {
 
   const navigateToProject = useCallback(
     (projectId: string) => {
-      router.push(`/${projectId}`);
+      router.push(buildProjectPath(projectId));
     },
     [router]
   );
 
   const navigateToEntities = useCallback(
     (projectId: string) => {
-      router.push(`/${projectId}/entities`);
+      router.push(buildEntitiesPath(projectId));
     },
     [router]
   );
 
   const navigateToEntityType = useCallback(
     (projectId: string, typeId: string) => {
-      router.push(`/${projectId}/entities/${typeId}`);
+      router.push(buildEntityTypePath(projectId, typeId));
     },
     [router]
   );
 
   const navigateToEntity = useCallback(
     (projectId: string, typeId: string, entityId: string) => {
-      router.push(`/${projectId}/entities/${typeId}/${entityId}`);
+      router.push(buildEntityPath(projectId, typeId, entityId));
     },
     [router]
   );
 
   const closeEntityModal = useCallback(() => {
     if (typeId) {
-      router.push(`/${projectId}/entities/${typeId}`);
+      router.push(buildEntityTypePath(projectId, typeId));
     } else {
-      router.push(`/${projectId}/entities`);
+      router.push(buildEntitiesPath(projectId));
     }
   }, [router, projectId, typeId]);
 

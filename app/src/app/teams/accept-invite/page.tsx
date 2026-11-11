@@ -2,8 +2,9 @@
 
 import React, {useEffect, useState} from 'react';
 
-import {useParams, useRouter} from 'next/navigation';
+import {useRouter} from 'next/navigation';
 
+import {useRouteParams} from '@hooks/useCurrentRoute';
 import {api} from '@services/api';
 import {useTranslation} from 'react-i18next';
 
@@ -14,8 +15,7 @@ import s from './page.module.css';
 const AcceptInvitePageContent: React.FC = () => {
   const {t} = useTranslation();
   const router = useRouter();
-  const params = useParams();
-  const token = params.token as string;
+  const token = useRouteParams().token as string;
 
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [error, setError] = useState<string | null>(null);

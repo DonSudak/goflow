@@ -6,6 +6,8 @@ import {getNotificationManager} from '@components/Notifications';
 import {useCanvasStore} from '../store/useCanvasStore';
 import {useGraphStore} from '../store/useGraphStore';
 import {Layer, LayerNode} from '../types/nodes';
+import {getCurrentTimelineId} from '../utils/getCurrentTimelineId';
+import {buildEditorPath} from '../utils/navigation';
 import {Command} from './CommandInterface';
 import {generateAndSaveOperation} from './operationUtils';
 
@@ -102,7 +104,7 @@ export class CreateLayerCommand implements Command {
       const parentName = this.getLayerName(parentLayerId) || parentLayerId;
 
       // Формируем путь в зависимости от ID слоя
-      const path = parentLayerId === 'root' ? `/${this.projectId}/editor` : `/${this.projectId}/editor/${parentLayerId}`;
+      const path = buildEditorPath(this.projectId, getCurrentTimelineId() ?? undefined, parentLayerId);
 
       getNotificationManager().showErrorWithNavigation(
         `Can't undo layer creation because you are currently in this layer. Please navigate to the parent layer "${parentName}" and try again.`,
@@ -381,7 +383,7 @@ export class DeleteLayerCommand implements Command {
       console.warn(`Невозможно отменить удаление слоя, так как вы находитесь в его дочернем слое ${currentGraphId}, который также был удален`);
 
       // Формируем путь для корневого слоя
-      const rootPath = `/${this.projectId}/editor`;
+      const rootPath = buildEditorPath(this.projectId, getCurrentTimelineId() ?? undefined);
 
       getNotificationManager().showErrorWithNavigation(
         `Can't undo layer deletion because you are currently in its child layer, which was also deleted. Please navigate to the main layer or another existing layer and try again.`,
@@ -401,7 +403,7 @@ export class DeleteLayerCommand implements Command {
       const parentName = this.getLayerName(parentLayerId) || parentLayerId;
 
       // Формируем путь в зависимости от ID слоя
-      const path = parentLayerId === 'root' ? `/${this.projectId}/editor` : `/${this.projectId}/editor/${parentLayerId}`;
+      const path = buildEditorPath(this.projectId, getCurrentTimelineId() ?? undefined, parentLayerId);
 
       getNotificationManager().showErrorWithNavigation(
         `Can't undo layer deletion because you are trying to restore the layer you are currently in. Please navigate to the parent layer "${parentName}" and try again.`,

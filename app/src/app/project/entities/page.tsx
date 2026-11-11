@@ -2,7 +2,8 @@
 
 import React from 'react';
 
-import {useParams} from 'next/navigation';
+import {useRouteParams} from '@hooks/useCurrentRoute';
+import {useProjectPage} from '@hooks/useProjectPage';
 
 import {useGraphStore} from '@store/useGraphStore';
 
@@ -14,12 +15,12 @@ import SimpleCreateModal from '@components/Dashboard/projects/SimpleCreateModal'
 import SimpleDeleteModal from '@components/Dashboard/projects/SimpleDeleteModal';
 import SimpleRenameModal from '@components/Dashboard/projects/SimpleRenameModal';
 
-import {useProjectPage} from '../../../hooks/useProjectPage';
-
-const EntitiesPage: React.FC = () => {
-  const params = useParams();
-  const projectId = params.project_id as string;
-  const timelineId = useGraphStore.getState().currentTimelineId;
+const EntityModalPage: React.FC = () => {
+  const params = useRouteParams();
+  const projectId = params.project as string;
+  const typeId = params.type;
+  const entityId = params.entity;
+  const timelineId = useGraphStore.getState().currentTimelineId || 'undefined';
   const {
     projects,
     isLoading,
@@ -71,6 +72,8 @@ const EntitiesPage: React.FC = () => {
         onProjectNameChange={handleProjectNameChange}
         onProjectInfoSave={handleProjectInfoSave}
         section='entities'
+        filterTypeId={typeId}
+        openEntityId={entityId}
       />
 
       {/* Модальные окна */}
@@ -103,11 +106,11 @@ const EntitiesPage: React.FC = () => {
         onClose={() => setIsCreateTeamModalOpen(false)}
         onSuccess={() => {
           // Команда создана успешно
-          console.log('Team created successfully from entities page');
+          console.log('Team created successfully from entity page');
         }}
       />
     </DashboardLayout>
   );
 };
 
-export default EntitiesPage;
+export default EntityModalPage;

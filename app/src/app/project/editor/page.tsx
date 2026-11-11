@@ -2,16 +2,23 @@
 
 import {useEffect, useState} from 'react';
 
-import {useParams, useRouter} from 'next/navigation';
+import {useRouter} from 'next/navigation';
 
+import {useRouteParams} from '@hooks/useCurrentRoute';
 import {useTeamSwitch} from '@hooks/useTeamSwitch';
 import {api} from '@services/api';
 import {buildEditorPath} from 'src/utils/navigation';
 
+import TimelineCanvas from './TimelineCanvas';
+
+/** /project/editor?project=..[&timeline=..[&layer=..]] — without a timeline redirects to the active one */
 const EditorPage = () => {
+  const params = useRouteParams();
+  return params.timeline ? <TimelineCanvas /> : <EditorRedirect projectId={params.project as string} />;
+};
+
+const EditorRedirect = ({projectId}: {projectId: string}) => {
   const router = useRouter();
-  const params = useParams();
-  const projectId = params.project_id as string;
   const [loading, setLoading] = useState(true);
 
   // Обрабатываем переключение команд с автоматическим редиректом

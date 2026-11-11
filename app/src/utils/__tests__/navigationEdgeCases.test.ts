@@ -5,62 +5,62 @@ describe('Navigation Edge Cases', () => {
   describe('buildEditorPath edge cases', () => {
     it('should handle special characters in project ID', () => {
       const result = buildEditorPath('project-with-dashes_and_underscores.123', 'test-timeline');
-      expect(result).toBe('/project-with-dashes_and_underscores.123/editor/test-timeline');
+      expect(result).toBe('/project/editor?project=project-with-dashes_and_underscores.123&timeline=test-timeline');
     });
 
     it('should handle special characters in timeline ID', () => {
       const result = buildEditorPath('project', 'timeline-with-dashes_and_underscores.123');
-      expect(result).toBe('/project/editor/timeline-with-dashes_and_underscores.123');
+      expect(result).toBe('/project/editor?project=project&timeline=timeline-with-dashes_and_underscores.123');
     });
 
     it('should handle special characters in layer ID', () => {
       const result = buildEditorPath('project', 'timeline', 'layer-with-dashes_and_underscores.123');
-      expect(result).toBe('/project/editor/timeline/layer-with-dashes_and_underscores.123');
+      expect(result).toBe('/project/editor?project=project&timeline=timeline&layer=layer-with-dashes_and_underscores.123');
     });
 
     it('should handle very long IDs', () => {
       const longId = 'a'.repeat(100);
       const result = buildEditorPath(longId, longId, longId);
-      expect(result).toBe(`/${longId}/editor/${longId}/${longId}`);
+      expect(result).toBe(`/project/editor?project=${longId}&timeline=${longId}&layer=${longId}`);
     });
 
     it('should handle numeric IDs', () => {
       const result = buildEditorPath('123', '456', '789');
-      expect(result).toBe('/123/editor/456/789');
+      expect(result).toBe('/project/editor?project=123&timeline=456&layer=789');
     });
 
     it('should handle mixed case IDs', () => {
       const result = buildEditorPath('ProjectABC', 'TimelineXYZ', 'LayerDEF');
-      expect(result).toBe('/ProjectABC/editor/TimelineXYZ/LayerDEF');
+      expect(result).toBe('/project/editor?project=ProjectABC&timeline=TimelineXYZ&layer=LayerDEF');
     });
   });
 
   describe('buildPlayPath edge cases', () => {
     it('should handle special characters in node ID', () => {
       const result = buildPlayPath('project', 'timeline', 'node-with-dashes_and_underscores.123');
-      expect(result).toBe('/project/play/timeline?nodeId=node-with-dashes_and_underscores.123');
+      expect(result).toBe('/project/play?project=project&timeline=timeline&nodeId=node-with-dashes_and_underscores.123');
     });
 
     it('should handle node ID with spaces (URL encoding)', () => {
       const result = buildPlayPath('project', 'timeline', 'node with spaces');
-      expect(result).toBe('/project/play/timeline?nodeId=node with spaces');
+      expect(result).toBe('/project/play?project=project&timeline=timeline&nodeId=node%20with%20spaces');
     });
 
     it('should handle node ID with special query characters', () => {
       const result = buildPlayPath('project', 'timeline', 'node&with=special?chars');
-      expect(result).toBe('/project/play/timeline?nodeId=node&with=special?chars');
+      expect(result).toBe('/project/play?project=project&timeline=timeline&nodeId=node%26with%3Dspecial%3Fchars');
     });
 
     it('should handle very long node ID', () => {
       const longNodeId = 'node-' + 'a'.repeat(200);
       const result = buildPlayPath('project', 'timeline', longNodeId);
-      expect(result).toBe(`/project/play/timeline?nodeId=${longNodeId}`);
+      expect(result).toBe(`/project/play?project=project&timeline=timeline&nodeId=${longNodeId}`);
     });
   });
 
   describe('parseEditorPath edge cases', () => {
     it('should handle paths with trailing slash', () => {
-      const result = parseEditorPath('/project123/editor/timeline-1/layer-456/');
+      const result = parseEditorPath('/project/editor/?project=project123&timeline=timeline-1&layer=layer-456');
       expect(result).toEqual({
         projectId: 'project123',
         timelineId: 'timeline-1',
@@ -74,17 +74,17 @@ describe('Navigation Edge Cases', () => {
     });
 
     it('should handle paths with encoded characters', () => {
-      const result = parseEditorPath('/project%20123/editor/timeline%2D1/layer%5F456');
+      const result = parseEditorPath('/project/editor?project=project%20123&timeline=timeline%2D1&layer=layer%5F456');
       expect(result).toEqual({
-        projectId: 'project%20123',
-        timelineId: 'timeline%2D1',
-        layerId: 'layer%5F456'
+        projectId: 'project 123',
+        timelineId: 'timeline-1',
+        layerId: 'layer_456'
       });
     });
 
     it('should handle very long paths', () => {
       const longId = 'a'.repeat(100);
-      const result = parseEditorPath(`/${longId}/editor/${longId}/${longId}`);
+      const result = parseEditorPath(`/project/editor?project=${longId}&timeline=${longId}&layer=${longId}`);
       expect(result).toEqual({
         projectId: longId,
         timelineId: longId,
@@ -93,7 +93,7 @@ describe('Navigation Edge Cases', () => {
     });
 
     it('should handle paths with numeric IDs', () => {
-      const result = parseEditorPath('/123/editor/456/789');
+      const result = parseEditorPath('/project/editor?project=123&timeline=456&layer=789');
       expect(result).toEqual({
         projectId: '123',
         timelineId: '456',
@@ -102,7 +102,7 @@ describe('Navigation Edge Cases', () => {
     });
 
     it('should handle case sensitivity', () => {
-      const result = parseEditorPath('/ProjectABC/editor/TimelineXYZ/LayerDEF');
+      const result = parseEditorPath('/project/editor?project=ProjectABC&timeline=TimelineXYZ&layer=LayerDEF');
       expect(result).toEqual({
         projectId: 'ProjectABC',
         timelineId: 'TimelineXYZ',
@@ -111,7 +111,7 @@ describe('Navigation Edge Cases', () => {
     });
 
     it('should handle paths with fragment identifiers', () => {
-      const result = parseEditorPath('/project123/editor/timeline-1/layer-456#section');
+      const result = parseEditorPath('/project/editor?project=project123&timeline=timeline-1&layer=layer-456#section');
       expect(result).toEqual({
         projectId: 'project123',
         timelineId: 'timeline-1',
@@ -120,7 +120,7 @@ describe('Navigation Edge Cases', () => {
     });
 
     it('should handle paths with complex query parameters', () => {
-      const result = parseEditorPath('/project123/editor/timeline-1/layer-456?param1=value1&param2=value2&param3=value%20with%20spaces');
+      const result = parseEditorPath('/project/editor?project=project123&timeline=timeline-1&layer=layer-456&param1=value1&param2=value2&param3=value%20with%20spaces');
       expect(result).toEqual({
         projectId: 'project123',
         timelineId: 'timeline-1',
@@ -149,20 +149,20 @@ describe('Navigation Edge Cases', () => {
     it('should handle URLs with encoded characters', () => {
       Object.defineProperty(window, 'location', {
         value: {
-          pathname: '/project%20123/editor/timeline%2D1/layer%5F456'
+          pathname: '/project/editor?project=project%20123&timeline=timeline%2D1&layer=layer%5F456'
         },
         writable: true
       });
 
       const result = getCurrentTimelineId();
-      expect(result).toBe('timeline%2D1');
+      expect(result).toBe('timeline-1');
     });
 
     it('should handle very long URLs', () => {
       const longId = 'timeline-' + 'a'.repeat(200);
       Object.defineProperty(window, 'location', {
         value: {
-          pathname: `/project123/editor/${longId}/layer-456`
+          pathname: `/project/editor?project=project123&timeline=${longId}&layer=layer-456`
         },
         writable: true
       });
@@ -174,7 +174,7 @@ describe('Navigation Edge Cases', () => {
     it('should handle URLs with special characters', () => {
       Object.defineProperty(window, 'location', {
         value: {
-          pathname: '/project123/editor/timeline-with-dashes_and_underscores.123/layer-456'
+          pathname: '/project/editor?project=project123&timeline=timeline-with-dashes_and_underscores.123&layer=layer-456'
         },
         writable: true
       });
@@ -186,7 +186,7 @@ describe('Navigation Edge Cases', () => {
 
   describe('Integration edge cases', () => {
     it('should handle round-trip parsing and building', () => {
-      const originalPath = '/project123/editor/timeline-1/layer-456';
+      const originalPath = '/project/editor?project=project123&timeline=timeline-1&layer=layer-456';
       const parsed = parseEditorPath(originalPath);
 
       if (parsed) {
@@ -196,7 +196,7 @@ describe('Navigation Edge Cases', () => {
     });
 
     it('should handle round-trip with root layer', () => {
-      const originalPath = '/project123/editor/timeline-1';
+      const originalPath = '/project/editor?project=project123&timeline=timeline-1';
       const parsed = parseEditorPath(originalPath);
 
       if (parsed) {

@@ -33,7 +33,7 @@ describe('Navigation Performance', () => {
 
   describe('parseEditorPath performance', () => {
     it('should parse paths quickly for normal use cases', () => {
-      const paths = Array.from({length: 1000}, (_, i) => `/project-${i}/editor/timeline-${i}/layer-${i}`);
+      const paths = Array.from({length: 1000}, (_, i) => `/project/editor?project=project-${i}&timeline=timeline-${i}&layer=layer-${i}`);
 
       const start = performance.now();
 
@@ -46,7 +46,7 @@ describe('Navigation Performance', () => {
     });
 
     it('should handle regex matching efficiently', () => {
-      const validPaths = Array.from({length: 5000}, (_, i) => `/project-${i}/editor/timeline-${i}/layer-${i}`);
+      const validPaths = Array.from({length: 5000}, (_, i) => `/project/editor?project=project-${i}&timeline=timeline-${i}&layer=layer-${i}`);
       const invalidPaths = Array.from({length: 5000}, (_, i) => `/invalid-${i}/path-${i}`);
 
       const allPaths = [...validPaths, ...invalidPaths];
@@ -70,7 +70,7 @@ describe('Navigation Performance', () => {
     it('should extract timeline ID quickly', () => {
       Object.defineProperty(window, 'location', {
         value: {
-          pathname: '/project123/editor/timeline-1/layer-456'
+          pathname: '/project/editor?project=project123&timeline=timeline-1&layer=layer-456'
         },
         writable: true
       });
@@ -134,7 +134,7 @@ describe('Navigation Performance', () => {
 
       // Парсим много путей
       for (let i = 0; i < 10000; i++) {
-        parseEditorPath(`/project-${i}/editor/timeline-${i}/layer-${i}`);
+        parseEditorPath(`/project/editor?project=project-${i}&timeline=timeline-${i}&layer=layer-${i}`);
         parseEditorPath(`/invalid-path-${i}`);
       }
 
@@ -158,7 +158,7 @@ describe('Navigation Performance', () => {
         Promise.resolve().then(() => {
           // Смешиваем операции
           buildEditorPath(`project-${i}`, `timeline-${i}`, `layer-${i}`);
-          parseEditorPath(`/project-${i}/editor/timeline-${i}/layer-${i}`);
+          parseEditorPath(`/project/editor?project=project-${i}&timeline=timeline-${i}&layer=layer-${i}`);
           buildPlayPath(`project-${i}`, `timeline-${i}`, `node-${i}`);
         })
       );
@@ -183,7 +183,7 @@ describe('Navigation Performance', () => {
 
       // Все результаты должны быть одинаковыми
       expect(results.size).toBe(1);
-      expect(results.has('/project/editor/timeline/layer')).toBe(true);
+      expect(results.has('/project/editor?project=project&timeline=timeline&layer=layer')).toBe(true);
     });
 
     it('should handle edge cases consistently', () => {

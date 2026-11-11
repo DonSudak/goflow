@@ -11,6 +11,7 @@ import {GearIcon, MoonIcon, TrashIcon, UpdateIcon} from '@radix-ui/react-icons';
 import {api} from '@services/api';
 import {useTranslation} from 'react-i18next';
 import {isOSS} from 'src/utils/edition';
+import {buildEditorPath} from 'src/utils/navigation';
 
 import {useTeamStore} from '@store/useTeamStore';
 import useUserStore from '@store/useUserStore';
@@ -106,7 +107,7 @@ const SettingsPageContent: React.FC = () => {
 
   // Обработчик выбора проекта - переход в редактор
   const handleProjectSelect = (projectId: string) => {
-    router.push(`/${projectId}/editor`);
+    router.push(buildEditorPath(projectId));
   };
 
   // Компонент боковой панели проектов

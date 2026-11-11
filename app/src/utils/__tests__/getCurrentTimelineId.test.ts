@@ -1,10 +1,12 @@
 import {getCurrentTimelineId} from '../getCurrentTimelineId';
 
 // Мокаем window.location
-const mockLocation = (pathname: string) => {
+const mockLocation = (url: string) => {
+  const [pathname, search = ''] = url.split('?');
   Object.defineProperty(window, 'location', {
     value: {
-      pathname
+      pathname,
+      search: search ? `?${search}` : ''
     },
     writable: true
   });
@@ -29,14 +31,14 @@ describe('getCurrentTimelineId', () => {
   });
 
   it('should return timeline id from valid editor path', () => {
-    mockLocation('/project123/editor/timeline-1/layer-456');
+    mockLocation('/project/editor?project=project123&timeline=timeline-1&layer=layer-456');
 
     const result = getCurrentTimelineId();
     expect(result).toBe('timeline-1');
   });
 
   it('should return timeline id from editor path without layer', () => {
-    mockLocation('/project123/editor/timeline-2');
+    mockLocation('/project/editor?project=project123&timeline=timeline-2');
 
     const result = getCurrentTimelineId();
     expect(result).toBe('timeline-2');
@@ -50,7 +52,7 @@ describe('getCurrentTimelineId', () => {
   });
 
   it('should return null for non-editor path', () => {
-    mockLocation('/project123/play/timeline-1');
+    mockLocation('/project/play?project=project123&timeline=timeline-1');
 
     const result = getCurrentTimelineId();
     expect(result).toBe(null);
@@ -71,14 +73,14 @@ describe('getCurrentTimelineId', () => {
   });
 
   it('should handle path with query parameters', () => {
-    mockLocation('/project123/editor/timeline-custom?param=value');
+    mockLocation('/project/editor?project=project123&timeline=timeline-custom&param=value');
 
     const result = getCurrentTimelineId();
     expect(result).toBe('timeline-custom');
   });
 
   it('should handle path with hash', () => {
-    mockLocation('/project123/editor/timeline-hash#section');
+    mockLocation('/project/editor?project=project123&timeline=timeline-hash#section');
 
     const result = getCurrentTimelineId();
     expect(result).toBe('timeline-hash');

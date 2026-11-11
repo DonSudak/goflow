@@ -1,135 +1,92 @@
 /**
- * Построение пути к редактору
- * timelineId теперь обязательный параметр
+ * Route builders/parsers. All project routes are static paths with query params
+ * (`/project/...?project=&timeline=&layer=&type=&entity=`) so the app can be statically exported.
  */
-export const buildEditorPath = (projectId: string, timelineId: string, layerId?: string): string => {
-  const base = `/${projectId}/editor/${timelineId}`;
-  return layerId && layerId !== 'root' ? `${base}/${layerId}` : base;
+const withQuery = (path: string, query: Record<string, string | undefined>): string => {
+  const q = Object.keys(query)
+    .filter((k) => query[k])
+    .map((k) => `${k}=${encodeURIComponent(query[k] as string)}`)
+    .join('&');
+  return q ? `${path}?${q}` : path;
 };
+
+/**
+ * Построение пути к редактору
+ * timelineId — без него страница редактора перенаправит на активный таймлайн
+ */
+export const buildEditorPath = (projectId: string | undefined, timelineId?: string, layerId?: string): string =>
+  withQuery('/project/editor', {project: projectId, timeline: timelineId, layer: layerId && layerId !== 'root' ? layerId : undefined});
 
 /**
  * Построение пути к воспроизведению
  */
-export const buildPlayPath = (projectId: string, timelineId: string, nodeId?: string): string => {
-  const base = `/${projectId}/play/${timelineId}`;
-  return nodeId ? `${base}?nodeId=${nodeId}` : base;
-};
+export const buildPlayPath = (projectId: string, timelineId: string, nodeId?: string): string => withQuery('/project/play', {project: projectId, timeline: timelineId, nodeId});
 
 /**
- * Парсинг пути редактора
+ * Парсинг URL редактора (pathname + search, например window.location.pathname + window.location.search)
  */
-export const parseEditorPath = (pathname: string) => {
-  // Удаляем query параметры и hash перед парсингом
-  const cleanPath = pathname.split('?')[0].split('#')[0];
-  const match = cleanPath.match(/\/([^/]+)\/editor\/([^/]+)(?:\/([^/]+))?/);
+const PARAM_RE = {
+  project: /(?:^|[?&])project=([^&#]*)/,
+  timeline: /(?:^|[?&])timeline=([^&#]*)/,
+  layer: /(?:^|[?&])layer=([^&#]*)/
+};
+const queryParam = (url: string, key: keyof typeof PARAM_RE): string | null => {
+  const m = url.match(PARAM_RE[key]);
+  return m && m[1] ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : null;
+};
 
-  if (!match) return null;
+export const parseEditorPath = (url: string) => {
+  if (!url.startsWith('/project/editor')) return null;
+  const projectId = queryParam(url, 'project');
+  const timelineId = queryParam(url, 'timeline');
+  if (!projectId || !timelineId) return null;
 
   return {
-    projectId: match[1],
-    timelineId: match[2],
-    layerId: match[3] || 'root'
+    projectId,
+    timelineId,
+    layerId: queryParam(url, 'layer') || 'root'
   };
 };
 
 /**
  * Построение пути к проекту (библия)
  */
-export const buildProjectPath = (projectId: string): string => {
-  return `/${projectId}`;
-};
+export const buildProjectPath = (projectId: string): string => withQuery('/project', {project: projectId});
 
 /**
  * Построение пути к сущностям проекта
  */
-export const buildEntitiesPath = (projectId: string): string => {
-  return `/${projectId}/entities`;
-};
+export const buildEntitiesPath = (projectId: string): string => withQuery('/project/entities', {project: projectId});
 
 /**
  * Построение пути к типу сущностей
  */
-export const buildEntityTypePath = (projectId: string, typeId: string): string => {
-  return `/${projectId}/entities/${typeId}`;
-};
+export const buildEntityTypePath = (projectId: string, typeId: string): string => withQuery('/project/entities', {project: projectId, type: typeId});
 
 /**
  * Построение пути к конкретной сущности
  */
-export const buildEntityPath = (projectId: string, typeId: string, entityId: string): string => {
-  return `/${projectId}/entities/${typeId}/${entityId}`;
-};
+export const buildEntityPath = (projectId: string, typeId: string, entityId: string): string => withQuery('/project/entities', {project: projectId, type: typeId, entity: entityId});
 
 /**
  * Построение пути к локализации проекта
  */
-export const buildLocalizationPath = (projectId: string): string => {
-  return `/${projectId}/localization`;
-};
+export const buildLocalizationPath = (projectId: string): string => withQuery('/project/localization', {project: projectId});
 
 /**
- * Парсинг пути проекта
+ * Парсинг пути проекта (pathname + search)
  */
-export const parseProjectPath = (pathname: string) => {
-  // Удаляем query параметры и hash перед парсингом
-  const cleanPath = pathname.split('?')[0].split('#')[0];
+export const parseProjectPath = (url: string) => {
+  const [path, search = ''] = url.split('#')[0].split('?');
+  const q = new URLSearchParams(search);
+  const projectId = q.get('project');
+  if (!projectId || !path.startsWith('/project')) return null;
+  const section = path.startsWith('/project/entities') ? ('entities' as const) : path.startsWith('/project/localization') ? ('localization' as const) : ('about' as const);
 
-  // Проверяем разные паттерны путей
-
-  // Паттерн для сущности: /{projectId}/entities/{typeId}/{entityId}
-  const entityMatch = cleanPath.match(/\/([^/]+)\/entities\/([^/]+)\/([^/]+)$/);
-  if (entityMatch) {
-    return {
-      projectId: entityMatch[1],
-      section: 'entities' as const,
-      typeId: entityMatch[2],
-      entityId: entityMatch[3]
-    };
-  }
-
-  // Паттерн для типа сущностей: /{projectId}/entities/{typeId}
-  const typeMatch = cleanPath.match(/\/([^/]+)\/entities\/([^/]+)$/);
-  if (typeMatch) {
-    return {
-      projectId: typeMatch[1],
-      section: 'entities' as const,
-      typeId: typeMatch[2],
-      entityId: undefined
-    };
-  }
-
-  // Паттерн для всех сущностей: /{projectId}/entities
-  const entitiesMatch = cleanPath.match(/\/([^/]+)\/entities$/);
-  if (entitiesMatch) {
-    return {
-      projectId: entitiesMatch[1],
-      section: 'entities' as const,
-      typeId: undefined,
-      entityId: undefined
-    };
-  }
-
-  // Паттерн для локализации: /{projectId}/localization
-  const localizationMatch = cleanPath.match(/\/([^/]+)\/localization$/);
-  if (localizationMatch) {
-    return {
-      projectId: localizationMatch[1],
-      section: 'localization' as const,
-      typeId: undefined,
-      entityId: undefined
-    };
-  }
-
-  // Паттерн для проекта: /{projectId}
-  const projectMatch = cleanPath.match(/\/([^/]+)$/);
-  if (projectMatch) {
-    return {
-      projectId: projectMatch[1],
-      section: 'about' as const,
-      typeId: undefined,
-      entityId: undefined
-    };
-  }
-
-  return null;
+  return {
+    projectId,
+    section,
+    typeId: q.get('type') || undefined,
+    entityId: q.get('entity') || undefined
+  };
 };

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {Suspense} from 'react';
 
 import type {Metadata} from 'next';
 import {Geist, Geist_Mono} from 'next/font/google';
@@ -48,7 +48,10 @@ const RootLayout: React.FC<{children: React.ReactNode}> = ({children}) => {
     <html lang='en'>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Theme>
-          <ClientLayout>{children}</ClientLayout>
+          {/* Suspense: route params come from useSearchParams (static export) */}
+          <Suspense>
+            <ClientLayout>{children}</ClientLayout>
+          </Suspense>
         </Theme>
       </body>
     </html>

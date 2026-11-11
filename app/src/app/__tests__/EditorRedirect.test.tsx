@@ -1,17 +1,19 @@
 import React from 'react';
 
-import {useParams, usePathname, useRouter} from 'next/navigation';
+import {usePathname, useRouter, useSearchParams} from 'next/navigation';
 
 import {Timeline, api} from '@services/api';
 import {render, waitFor} from '@testing-library/react';
 import {buildEditorPath} from 'src/utils/navigation';
 
-import EditorPage from '../[project_id]/editor/page';
+import EditorPage from '../project/editor/page';
+
+jest.mock('../project/editor/TimelineCanvas', () => ({__esModule: true, default: () => null}));
 
 // Мокаем Next.js хуки
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(),
-  useParams: jest.fn(),
+  useSearchParams: jest.fn(),
   usePathname: jest.fn()
 }));
 
@@ -24,7 +26,7 @@ jest.mock('@services/api', () => ({
 
 const mockReplace = jest.fn();
 const mockUseRouter = useRouter as jest.MockedFunction<typeof useRouter>;
-const mockUseParams = useParams as jest.MockedFunction<typeof useParams>;
+const mockUseSearchParams = useSearchParams as jest.MockedFunction<typeof useSearchParams>;
 const mockUsePathname = usePathname as jest.MockedFunction<typeof usePathname>;
 const mockGetProjectTimelines = api.getProjectTimelines as jest.MockedFunction<typeof api.getProjectTimelines>;
 
@@ -40,13 +42,11 @@ describe('EditorPage redirect', () => {
       prefetch: jest.fn()
     } as any);
 
-    mockUsePathname.mockReturnValue('/test-project/editor');
+    mockUsePathname.mockReturnValue('/project/editor');
   });
 
   it('should redirect to first timeline when accessing project editor root', async () => {
-    mockUseParams.mockReturnValue({
-      project_id: 'test-project-123'
-    });
+    mockUseSearchParams.mockReturnValue(new URLSearchParams({project: 'test-project-123'}) as any);
 
     const mockTimelines: Timeline[] = [
       {
@@ -80,9 +80,7 @@ describe('EditorPage redirect', () => {
   });
 
   it('should redirect to active timeline if it exists', async () => {
-    mockUseParams.mockReturnValue({
-      project_id: 'test-project-123'
-    });
+    mockUseSearchParams.mockReturnValue(new URLSearchParams({project: 'test-project-123'}) as any);
 
     const mockTimelines: Timeline[] = [
       {
@@ -121,9 +119,7 @@ describe('EditorPage redirect', () => {
   });
 
   it('should redirect to home when no timelines exist', async () => {
-    mockUseParams.mockReturnValue({
-      project_id: 'test-project-123'
-    });
+    mockUseSearchParams.mockReturnValue(new URLSearchParams({project: 'test-project-123'}) as any);
 
     mockGetProjectTimelines.mockResolvedValue([]);
 
@@ -135,9 +131,7 @@ describe('EditorPage redirect', () => {
   });
 
   it('should redirect to home when API call fails', async () => {
-    mockUseParams.mockReturnValue({
-      project_id: 'test-project-123'
-    });
+    mockUseSearchParams.mockReturnValue(new URLSearchParams({project: 'test-project-123'}) as any);
 
     mockGetProjectTimelines.mockRejectedValue(new Error('API Error'));
 
@@ -149,9 +143,7 @@ describe('EditorPage redirect', () => {
   });
 
   it('should show loading during API call', () => {
-    mockUseParams.mockReturnValue({
-      project_id: 'test-project-123'
-    });
+    mockUseSearchParams.mockReturnValue(new URLSearchParams({project: 'test-project-123'}) as any);
 
     mockGetProjectTimelines.mockImplementation(() => new Promise(() => {})); // Never resolves
 
@@ -161,9 +153,7 @@ describe('EditorPage redirect', () => {
   });
 
   it('should return null after loading completes', async () => {
-    mockUseParams.mockReturnValue({
-      project_id: 'test-project-123'
-    });
+    mockUseSearchParams.mockReturnValue(new URLSearchParams({project: 'test-project-123'}) as any);
 
     const mockTimelines: Timeline[] = [
       {

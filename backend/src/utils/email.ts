@@ -33,7 +33,7 @@ export const sendInvitationEmail = async (
     teamName: string, 
     invitedBy: string
 ) => {
-    const inviteLink = `${env.FRONTEND_URL}/teams/accept-invite/${token}`;
+    const inviteLink = `${env.FRONTEND_URL}/teams/accept-invite?token=${encodeURIComponent(token)}`;
 
     await getResend().emails.send({
         from: env.RESEND_FROM_EMAIL,

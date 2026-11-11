@@ -2,7 +2,8 @@
 
 import React from 'react';
 
-import {useParams} from 'next/navigation';
+import {useRouteParams} from '@hooks/useCurrentRoute';
+import {useProjectPage} from '@hooks/useProjectPage';
 
 import {useGraphStore} from '@store/useGraphStore';
 
@@ -14,11 +15,12 @@ import SimpleCreateModal from '@components/Dashboard/projects/SimpleCreateModal'
 import SimpleDeleteModal from '@components/Dashboard/projects/SimpleDeleteModal';
 import SimpleRenameModal from '@components/Dashboard/projects/SimpleRenameModal';
 
-import {useProjectPage} from '../../hooks/useProjectPage';
-
-const ProjectPage: React.FC = () => {
-  const params = useParams();
-  const projectId = params.project_id as string;
+/**
+ * Страница локализации проекта
+ */
+const LocalizationPage: React.FC = () => {
+  const params = useRouteParams();
+  const projectId = params.project as string;
   const timelineId = useGraphStore.getState().currentTimelineId;
 
   const {
@@ -48,30 +50,16 @@ const ProjectPage: React.FC = () => {
     handleCreateTeam
   } = useProjectPage();
 
-  const projectsSidebar = (
-    <ProjectsSidebar
-      projects={projects}
-      selectedProjectId={projectId}
-      isCreatingProject={isCreatingProject}
-      isLoadingProjects={isLoading}
-      onCreateProject={handleCreateProject}
-      onCreateTeam={handleCreateTeam}
-      onProjectSelect={handleProjectSelect}
-      onRenameProject={handleRenameProject}
-      onDuplicateProject={handleDuplicateProject}
-      onDeleteProject={handleDeleteProject}
-    />
-  );
-
   return (
-    <DashboardLayout projectsSidebar={projectsSidebar}>
+    <DashboardLayout>
       <ProjectWorkspace
         selectedProjectId={projectId}
         selectedProjectName={selectedProjectName}
         onCreateProject={handleCreateProject}
         onProjectNameChange={handleProjectNameChange}
         onProjectInfoSave={handleProjectInfoSave}
-        section='about'
+        section='localization'
+        hideLeftPanel={true}
       />
 
       {/* Модальные окна */}
@@ -104,11 +92,11 @@ const ProjectPage: React.FC = () => {
         onClose={() => setIsCreateTeamModalOpen(false)}
         onSuccess={() => {
           // Команда создана успешно
-          console.log('Team created successfully from project page');
+          console.log('Team created successfully from localization page');
         }}
       />
     </DashboardLayout>
   );
 };
 
-export default ProjectPage;
+export default LocalizationPage;

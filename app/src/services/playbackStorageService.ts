@@ -1,3 +1,4 @@
+import {buildPlayPath} from '../utils/navigation';
 import {API_URL, api} from './api';
 import {PlaybackData, PlaybackLocalizationData, cleanupOldPlaybackData, deletePlaybackData, loadPlaybackData, loadProject, savePlaybackData} from './dbService';
 
@@ -397,7 +398,7 @@ export class PlaybackStorageService {
    */
   public static buildPlaybackUrl(projectId: string, timelineId: string, startNodeId?: string): string {
     const playbackId = this.generatePlaybackId(projectId, timelineId);
-    const baseUrl = `/${projectId}/play/${timelineId}`;
+    const baseUrl = buildPlayPath(projectId, timelineId);
 
     const params = new URLSearchParams();
     params.set('playbackId', playbackId);
@@ -405,6 +406,6 @@ export class PlaybackStorageService {
       params.set('startNode', startNodeId);
     }
 
-    return `${baseUrl}?${params.toString()}`;
+    return `${baseUrl}&${params.toString()}`;
   }
 }

@@ -4,6 +4,7 @@ import React, {ReactNode} from 'react';
 
 import {ReactFlowProvider} from '@xyflow/react';
 import {Panel, PanelGroup, PanelResizeHandle} from 'react-resizable-panels';
+import {isLocal} from 'src/utils/edition';
 
 import {useUIStore} from '@store/useUIStore';
 
@@ -17,8 +18,6 @@ import Sidebar from '@components/Sidebar/Sidebar';
 import TopBar from '@components/TopBar/TopBar';
 
 import s from './layout.module.scss';
-
-export const dynamic = 'force-dynamic';
 
 const EditorLayout = ({children}: {children: ReactNode}) => {
   const isSidebarOpen = useUIStore((s) => s.isSidebarOpen);
@@ -47,7 +46,7 @@ const EditorLayout = ({children}: {children: ReactNode}) => {
                   <LeftPanel />
                   <PlayBar />
                   <SearchPanel />
-                  <NotebookPanel />
+                  {!isLocal() && <NotebookPanel />}
                 </div>
               </div>
             </Panel>

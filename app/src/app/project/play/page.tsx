@@ -7,7 +7,7 @@ import {Container, Flex, Text} from '@radix-ui/themes';
 
 import AuthGuard from '@components/AuthGuard/AuthGuard';
 
-import {StoryPlayer} from '../../../../playback/ui/StoryPlayer';
+import {StoryPlayer} from '../../../playback/ui/StoryPlayer';
 
 /**
  * Страница воспроизведения истории

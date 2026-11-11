@@ -10,7 +10,7 @@ describe('Navigation Logic Integration', () => {
 
       const expectedPath = buildEditorPath(projectId, timelineId, layerId);
 
-      expect(expectedPath).toBe('/test-project/editor/test-timeline/test-layer');
+      expect(expectedPath).toBe('/project/editor?project=test-project&timeline=test-timeline&layer=test-layer');
     });
 
     it('should handle root layer consistently', () => {
@@ -21,7 +21,7 @@ describe('Navigation Logic Integration', () => {
       const explicitRootPath = buildEditorPath(projectId, timelineId, 'root');
 
       expect(rootPath).toBe(explicitRootPath);
-      expect(rootPath).toBe('/test-project/editor/test-timeline');
+      expect(rootPath).toBe('/project/editor?project=test-project&timeline=test-timeline');
     });
 
     it('should handle timeline ID parameter correctly', () => {
@@ -30,7 +30,7 @@ describe('Navigation Logic Integration', () => {
 
       const path = buildEditorPath(projectId, timelineId);
 
-      expect(path).toBe('/test-project/editor/test-timeline');
+      expect(path).toBe('/project/editor?project=test-project&timeline=test-timeline');
     });
 
     it('should build play paths correctly', () => {
@@ -41,8 +41,8 @@ describe('Navigation Logic Integration', () => {
       const playPath = buildPlayPath(projectId, timelineId);
       const playPathWithNode = buildPlayPath(projectId, timelineId, nodeId);
 
-      expect(playPath).toBe('/test-project/play/test-timeline');
-      expect(playPathWithNode).toBe('/test-project/play/test-timeline?nodeId=test-node');
+      expect(playPath).toBe('/project/play?project=test-project&timeline=test-timeline');
+      expect(playPathWithNode).toBe('/project/play?project=test-project&timeline=test-timeline&nodeId=test-node');
     });
   });
 
@@ -55,7 +55,7 @@ describe('Navigation Logic Integration', () => {
     it('should extract timeline ID from current URL', () => {
       Object.defineProperty(window, 'location', {
         value: {
-          pathname: '/project123/editor/timeline-1/layer-456'
+          pathname: '/project/editor?project=project123&timeline=timeline-1&layer=layer-456'
         },
         writable: true
       });
@@ -86,8 +86,8 @@ describe('Navigation Logic Integration', () => {
       const rootPath = buildEditorPath(projectId, timelineId);
       const childPath = buildEditorPath(projectId, timelineId, childLayerId);
 
-      expect(rootPath).toBe('/project123/editor/timeline-1');
-      expect(childPath).toBe('/project123/editor/timeline-1/layer-456');
+      expect(rootPath).toBe('/project/editor?project=project123&timeline=timeline-1');
+      expect(childPath).toBe('/project/editor?project=project123&timeline=timeline-1&layer=layer-456');
     });
 
     it('should handle navigation between different timelines', () => {
@@ -99,8 +99,8 @@ describe('Navigation Logic Integration', () => {
       const path1 = buildEditorPath(projectId, timeline1, layerId);
       const path2 = buildEditorPath(projectId, timeline2, layerId);
 
-      expect(path1).toBe('/project123/editor/timeline-1/layer-456');
-      expect(path2).toBe('/project123/editor/timeline-2/layer-456');
+      expect(path1).toBe('/project/editor?project=project123&timeline=timeline-1&layer=layer-456');
+      expect(path2).toBe('/project/editor?project=project123&timeline=timeline-2&layer=layer-456');
     });
 
     it('should handle navigation from editor to play mode', () => {
@@ -110,8 +110,8 @@ describe('Navigation Logic Integration', () => {
       const editorPath = buildEditorPath(projectId, timelineId);
       const playPath = buildPlayPath(projectId, timelineId);
 
-      expect(editorPath).toBe('/project123/editor/timeline-1');
-      expect(playPath).toBe('/project123/play/timeline-1');
+      expect(editorPath).toBe('/project/editor?project=project123&timeline=timeline-1');
+      expect(playPath).toBe('/project/play?project=project123&timeline=timeline-1');
     });
 
     it('should handle complex navigation scenarios', () => {
@@ -127,11 +127,11 @@ describe('Navigation Logic Integration', () => {
       const playPath = buildPlayPath(projectId, timelineId);
       const playWithNodePath = buildPlayPath(projectId, timelineId, 'start-node');
 
-      expect(rootPath).toBe('/project123/editor/timeline-1');
-      expect(layer1Path).toBe('/project123/editor/timeline-1/layer-1');
-      expect(layer2Path).toBe('/project123/editor/timeline-1/layer-2');
-      expect(playPath).toBe('/project123/play/timeline-1');
-      expect(playWithNodePath).toBe('/project123/play/timeline-1?nodeId=start-node');
+      expect(rootPath).toBe('/project/editor?project=project123&timeline=timeline-1');
+      expect(layer1Path).toBe('/project/editor?project=project123&timeline=timeline-1&layer=layer-1');
+      expect(layer2Path).toBe('/project/editor?project=project123&timeline=timeline-1&layer=layer-2');
+      expect(playPath).toBe('/project/play?project=project123&timeline=timeline-1');
+      expect(playWithNodePath).toBe('/project/play?project=project123&timeline=timeline-1&nodeId=start-node');
     });
   });
 });

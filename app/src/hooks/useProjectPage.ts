@@ -1,7 +1,8 @@
 import {useEffect, useState} from 'react';
 
-import {useParams, useRouter} from 'next/navigation';
+import {useRouter} from 'next/navigation';
 
+import {useRouteParams} from '@hooks/useCurrentRoute';
 import {useTeamSwitch} from '@hooks/useTeamSwitch';
 import {useUserInitialization} from '@hooks/useUserInitialization';
 import {trackManagerCreateProject, trackManagerDeleteProject, trackManagerDuplicateProject, trackProjectNameEditing} from '@services/analytics';
@@ -13,10 +14,11 @@ import {useTeamStore} from '@store/useTeamStore';
 import useUserStore from '@store/useUserStore';
 
 import {isOSS} from '../utils/edition';
+import {buildProjectPath} from '../utils/navigation';
 
 export const useProjectPage = () => {
   const router = useRouter();
-  const params = useParams();
+  const params = useRouteParams();
   const {t} = useTranslation();
   const {user} = useUserStore();
   const {currentTeam, isLoading: isTeamLoading, isInitialized, userTeams} = useTeamStore();
@@ -54,14 +56,14 @@ export const useProjectPage = () => {
 
   // Устанавливаем selectedProject на основе projectId из URL
   useEffect(() => {
-    if (projects.length > 0 && params.project_id) {
-      const projectId = params.project_id as string;
+    if (projects.length > 0 && params.project) {
+      const projectId = params.project as string;
       const project = projects.find((p) => p.id === projectId);
       if (project) {
         setSelectedProject(project);
       }
     }
-  }, [projects, params.project_id]);
+  }, [projects, params.project]);
 
   const loadProjects = async () => {
     try {
@@ -125,7 +127,7 @@ export const useProjectPage = () => {
   };
 
   const handleProjectSelect = (projectId: string) => {
-    router.push(`/${projectId}`);
+    router.push(buildProjectPath(projectId));
   };
 
   const handleRenameProject = (project: Project) => {

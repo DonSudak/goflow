@@ -3,14 +3,14 @@ import {extractProjectId, isInProjectWorkspace} from '../routeHelpers';
 describe('routeHelpers', () => {
   describe('isInProjectWorkspace', () => {
     test('должен возвращать true для страниц проектов', () => {
-      expect(isInProjectWorkspace('/project-123')).toBe(true);
-      expect(isInProjectWorkspace('/project-123/entities')).toBe(true);
-      expect(isInProjectWorkspace('/project-123/entities/character')).toBe(true);
-      expect(isInProjectWorkspace('/project-123/entities/character/hero-123')).toBe(true);
-      expect(isInProjectWorkspace('/project-123/editor')).toBe(true);
-      expect(isInProjectWorkspace('/project-123/editor/timeline-123')).toBe(true);
-      expect(isInProjectWorkspace('/project-123/editor/timeline-123/layer-123')).toBe(true);
-      expect(isInProjectWorkspace('/project-123/play/timeline-123')).toBe(true);
+      expect(isInProjectWorkspace('/project')).toBe(true);
+      expect(isInProjectWorkspace('/project/entities')).toBe(true);
+      expect(isInProjectWorkspace('/project/entities')).toBe(true);
+      expect(isInProjectWorkspace('/project/entities')).toBe(true);
+      expect(isInProjectWorkspace('/project/editor')).toBe(true);
+      expect(isInProjectWorkspace('/project/editor')).toBe(true);
+      expect(isInProjectWorkspace('/project/editor')).toBe(true);
+      expect(isInProjectWorkspace('/project/play')).toBe(true);
     });
 
     test('должен возвращать false для не-проектных страниц', () => {
@@ -27,10 +27,10 @@ describe('routeHelpers', () => {
 
   describe('extractProjectId', () => {
     test('должен извлекать project_id из URL проектов', () => {
-      expect(extractProjectId('/project-123')).toBe('project-123');
-      expect(extractProjectId('/project-123/entities')).toBe('project-123');
-      expect(extractProjectId('/project-123/entities/character')).toBe('project-123');
-      expect(extractProjectId('/project-123/editor/timeline-123')).toBe('project-123');
+      expect(extractProjectId('/project?project=project-123')).toBe('project-123');
+      expect(extractProjectId('/project/entities?project=project-123')).toBe('project-123');
+      expect(extractProjectId('/project/entities?project=project-123&type=character')).toBe('project-123');
+      expect(extractProjectId('/project/editor?project=project-123&timeline=timeline-123')).toBe('project-123');
     });
 
     test('должен возвращать null для не-проектных страниц', () => {
