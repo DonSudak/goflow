@@ -26,6 +26,7 @@
     "test": "jest",
     "export:dialogue": "tsx scripts/export-dialogue.ts",
     "import:dialogue": "tsx scripts/import-dialogue.ts",
+    "mcp": "tsx scripts/mcp-server.ts",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:engine": "jest \"src/tests/(unit|integration)/.*\\.(ts|tsx)$\" --verbose"
@@ -88,6 +89,7 @@
     "@babel/preset-typescript": "^7.27.1",
     "@eslint/eslintrc": "^3",
     "@eslint/js": "^9.22.0",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@tailwindcss/postcss": "^4",
     "@tauri-apps/cli": "^2.12.4",
     "@testing-library/jest-dom": "^6.6.3",
@@ -121,6 +123,7 @@
     "tailwindcss": "^4",
     "ts-jest": "^29.3.3",
     "tsx": "^4.20.6",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "zod": "^3.25.76"
   }
 }
