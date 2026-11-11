@@ -1,5 +1,8 @@
 import Dexie, {type Table} from 'dexie';
 
+import {isTauri} from '../godot/settings';
+import {createTauriProjectStore} from './tauriProjectStoreFactory';
+
 /**
  * Self-contained project document (one JSON file per project on disk).
  * Format is documented in app/docs/LOCAL_EDITION.md — bump `format` on breaking changes.
@@ -102,8 +105,8 @@ export class IndexedDbProjectStore implements ProjectStore {
 
 let store: ProjectStore | null = null;
 
-/** Single switch point for the storage backend (G2b: return TauriFsProjectStore when running in Tauri). */
-export const getProjectStore = (): ProjectStore => (store ??= new IndexedDbProjectStore());
+/** Single switch point for the storage backend: project folders on disk under Tauri, IndexedDB in a browser. */
+export const getProjectStore = (): ProjectStore => (store ??= isTauri() ? createTauriProjectStore() : new IndexedDbProjectStore());
 
 /** Test hook */
 export const setProjectStore = (s: ProjectStore | null) => {

@@ -137,10 +137,12 @@ const ClientLayout: React.FC<{children: React.ReactNode}> = ({children}) => {
     return (
       <I18nProvider>
         <CanvasSettingsProvider>
-          <AppInitializer />
-          {children}
-          <WelcomeModal />
-          <WelcomeStoryInitializer />
+          <NotificationsProvider>
+            <AppInitializer />
+            {children}
+            <WelcomeModal />
+            <WelcomeStoryInitializer />
+          </NotificationsProvider>
         </CanvasSettingsProvider>
       </I18nProvider>
     );
