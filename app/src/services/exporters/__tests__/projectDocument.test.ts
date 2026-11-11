@@ -63,7 +63,7 @@ describe('project document export', () => {
     if (dir) {
       fs.mkdirSync(path.join(dir, 'sample_project'), {recursive: true});
       fs.writeFileSync(path.join(dir, 'sample_project', 'project.json'), JSON.stringify(buildSampleProject(), null, 2) + '\n');
-      fs.writeFileSync(path.join(dir, 'sample_export.dialogue'), file.content);
+      fs.writeFileSync(path.join(dir, 'sample_project.dialogue'), file.content);
     }
   });
 
