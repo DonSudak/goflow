@@ -77,6 +77,32 @@ so cloud ⇄ local migration is an export/import away.
 Image keys are `<entityId>__<parameterId>`; the `MediaValue` stored in an entity uses
 `storage: "local"` and the key as `gcsPath`. Images are served to `<img>` as object URLs.
 
+## Desktop app (Tauri 2)
+
+```bash
+npm run tauri:dev     # dev:local + native window
+npm run tauri:build   # src-tauri/target/release/goflow-ut + bundle/{appimage,deb}
+goflow-ut --godot-project ~/games/useless-tycoon [--project-dir <dir>]
+```
+
+- `src-tauri/`: plugins fs, dialog, store; Rust commands `cli_args` and `launch_godot(exe, args)`.
+- Under Tauri `getProjectStore()` returns `TauriFsProjectStore` (`src/services/local/tauriFsProjectStore.ts`):
+  `<projectsDir>/<slug>/project.json` (2-space indent, keys sorted recursively, trailing newline) and
+  `<slug>/images/<entityId>__<parameterId>.<ext>`. The slug comes from the project name once; renames keep the folder.
+- External changes (git pull, branch switch): every read compares the file mtime with the one this session
+  last read/wrote; on window focus all known projects are re-checked. A newer file on disk is never
+  overwritten: a toast is shown and the window reloads from disk.
+- Settings → **Godot** (`src/services/godot/settings.ts`, stored in `<appData>/settings.json`): Godot project,
+  projects dir (default `<godot>/narrative`), dialogue dir (default `<godot>/content/dialogue`), Godot executable,
+  auto-export toggle. `--godot-project` / `--project-dir` CLI args override.
+- Export modal → Dialogue Manager → **Write to Godot project**, and auto-export: `exporters/projectDocument.ts`
+  on the saved project document (same code as `scripts/export-dialogue.ts`, so output is byte-identical;
+  `<projectsDir>/game_manifest.json` is used when present — pass the same file to the CLI with `--manifest`).
+- **Play in Godot** (node context menu, play bar): exports, then runs
+  `<godot> --path <godot project> -- --dialogue res://content/dialogue/<file>.dialogue --cue <cue>`;
+  the cue comes from `DialogueManagerCodeGenerator.cueNames()`.
+- Fonts are bundled (`@fontsource/inter`, `next/font` for Geist): no network needed at runtime.
+
 ## Removed / hidden in the local edition
 
 - **AI** (node fill, bible generation, AI entity creation, AI translation, settings/debug): buttons hidden, routes 501.
@@ -91,4 +117,3 @@ Image keys are `<entityId>__<parameterId>`; the `MediaValue` stored in an entity
 ## Known limitations
 
 - Graph edits are persisted 200 ms after the last operation (debounced full-snapshot save); closing the tab inside that window loses the last edit.
-- `src/styles/globals.scss` still `@import`s the Inter font from Google Fonts; offline it falls back to system fonts.
