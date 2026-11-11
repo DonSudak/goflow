@@ -6,6 +6,7 @@ import {Layer, Link, Node} from '@types-folder/nodes';
 import {Variable} from '@types-folder/variables';
 
 import {StoryData} from '../../../playback/engine/core/StoryData';
+import type {GameManifest} from '../../gameManifest';
 
 /**
  * Перечисление поддерживаемых форматов экспорта
@@ -63,6 +64,10 @@ export interface ExportConfig {
   customVariablePrefix?: string;
   encoding?: 'utf-8' | 'ascii';
   indentSize?: number;
+  /** Dialogue Manager: game manifest for key detection, defaults and id validation */
+  manifest?: GameManifest;
+  /** Dialogue Manager: entity id -> name, fallback for speaker display names */
+  entities?: Array<{id: string; name: string}>;
 }
 
 /**

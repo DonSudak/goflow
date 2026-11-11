@@ -66,6 +66,7 @@ export interface NarrativeNodeLson extends BaseNodeLson {
     title: string;
     text: string;
     attachedEntities?: string[];
+    stage?: NodeStage;
   };
   operations?: VariableOperationLson[];
 }
@@ -80,9 +81,40 @@ export interface VariableOperationLson {
   };
 }
 
+/** Stage transition names understood by the game's StageController. */
+export type StageTransition = 'cut' | 'fade' | 'dissolve';
+
+/**
+ * Stage directions for a narrative node (Useless Tycoon / Dialogue Manager export).
+ * Ids refer to the game manifest (characters, backgrounds, cgs, slots, scenes).
+ */
+export interface NodeStage {
+  /** Character id; prefixes text lines without an explicit `Name:` */
+  speaker?: string;
+  background?: {id: string; transition?: StageTransition};
+  show?: Array<{slot: string; character: string; expression?: string; outfit?: string; transition?: StageTransition}>;
+  hide?: Array<{slot: string; transition?: StageTransition}>;
+  move?: Array<{from: string; to: string; transition?: StageTransition}>;
+  /** null clears the current CG */
+  cg?: {id: string; transition?: StageTransition} | null;
+  /** Clear the whole stage before other directions */
+  clear?: boolean;
+  /** SceneDef id, requested via `do scene("id")` after the node text */
+  scene?: string;
+}
+
+// type alias (not interface) so it stays assignable to Record<string, unknown> (React Flow node data)
+export type NarrativeNodeData = {
+  title: string;
+  text: string;
+  attachedEntities?: string[];
+  isSkeleton?: boolean;
+  stage?: NodeStage;
+};
+
 export interface NarrativeNode extends BaseNode {
   type: 'narrative';
-  data: {title: string; text: string; attachedEntities?: string[]; isSkeleton?: boolean};
+  data: NarrativeNodeData;
   operations?: VariableOperation[];
   //TODO isEntryPoint: boolean;
 }
