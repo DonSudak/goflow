@@ -68,7 +68,7 @@ export const playInGodot = async (projectId: string, nodeId?: string) => {
     cue = new DialogueManagerCodeGenerator().cueNames(story).get(nodeId) || 'start';
   }
   const dialogueRes = toResPath(settings.godotProject, paths[index]);
-  await launchGodot(settings.godotProject, dialogueRes, cue);
+  await launchGodot(dialogueRes, cue);
   return {cue, dialogueRes};
 };
 

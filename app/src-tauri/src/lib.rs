@@ -230,18 +230,42 @@ fn set_auto_export<R: Runtime>(app: AppHandle<R>, enabled: bool) -> Result<Godot
     Ok(effective(&app))
 }
 
-/// `<godot exe> --path <project> -- --dialogue <res> --cue <cue>`; returns the pid.
-#[tauri::command]
-fn play_in_godot<R: Runtime>(app: AppHandle<R>, project: PathBuf, dialogue_res: String, cue: String) -> Result<u32, String> {
-    if !is_godot_project(&project) {
-        return Err("Godot project folder must exist and contain project.godot".into());
+/// Godot project to run: only the Rust-held (dialog-chosen or CLI) value, never a webview argument.
+/// Rejected when it is not a Godot project, lives in app data/config, or when a webview-writable folder
+/// (projects / dialogue dir) contains the project root (the webview could then rewrite project.godot).
+pub fn trusted_godot_project(s: &GodotSettings, app_dirs: &[PathBuf]) -> Result<PathBuf, String> {
+    if s.godot_project.is_empty() {
+        return Err("Choose the Godot project in Settings → Godot first".into());
     }
+    let project = std::fs::canonicalize(&s.godot_project).map_err(|_| "Godot project folder does not exist".to_string())?;
+    if !is_godot_project(&project) {
+        return Err("Godot project folder must contain project.godot".into());
+    }
+    let canon = |p: &str| std::fs::canonicalize(p).unwrap_or_else(|_| PathBuf::from(p));
+    if app_dirs.iter().any(|d| project.starts_with(canon(&d.to_string_lossy()))) {
+        return Err("Godot project must not be inside the app data folder".into());
+    }
+    for writable in [&s.projects_dir, &s.dialogue_dir] {
+        if !writable.is_empty() && project.starts_with(canon(writable)) {
+            return Err(format!("Editor-writable folder {writable} must not contain the Godot project root"));
+        }
+    }
+    Ok(project)
+}
+
+/// `<godot exe> --path <godot project> -- --dialogue <res> --cue <cue>`; returns the pid.
+/// Executable and project come from Rust-held settings; only the two validated strings come from the webview.
+#[tauri::command]
+fn play_in_godot<R: Runtime>(app: AppHandle<R>, dialogue_res: String, cue: String) -> Result<u32, String> {
     if !valid_dialogue_res(&dialogue_res) {
         return Err(format!("Invalid dialogue path {dialogue_res}"));
     }
     if !valid_cue(&cue) {
         return Err(format!("Invalid cue {cue}"));
     }
+    let settings = effective(&app);
+    let app_dirs: Vec<PathBuf> = [app.path().app_data_dir(), app.path().app_config_dir()].into_iter().flatten().collect();
+    let project = trusted_godot_project(&settings, &app_dirs)?;
     let exe = load_stored(&app).godot_exe.map(PathBuf::from).filter(|p| is_godot_exe(p));
     let exe = exe.ok_or("Choose the Godot executable in Settings → Godot first")?;
     Command::new(&exe)
@@ -315,6 +339,24 @@ mod tests {
         std::fs::write(dir.join("project.godot"), "").unwrap();
         assert!(is_godot_project(&dir));
         std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn godot_project_must_be_trusted() {
+        let root = std::env::temp_dir().join(format!("goflow-trust-{}", std::process::id()));
+        let game = root.join("game");
+        std::fs::create_dir_all(game.join("narrative")).unwrap();
+        std::fs::write(game.join("project.godot"), "").unwrap();
+        let g = game.to_string_lossy().to_string();
+        let ok = resolve(&StoredPaths { godot_project: Some(g.clone()), ..Default::default() }, (None, None), &root.join("data"));
+        assert!(trusted_godot_project(&ok, &[root.join("data")]).is_ok());
+        // projects dir = project root -> webview could rewrite project.godot
+        let bad = resolve(&StoredPaths { godot_project: Some(g.clone()), projects_dir: Some(g.clone()), ..Default::default() }, (None, None), &root.join("data"));
+        assert!(trusted_godot_project(&bad, &[]).is_err());
+        // inside app data
+        assert!(trusted_godot_project(&ok, &[root.clone()]).is_err());
+        assert!(trusted_godot_project(&resolve(&StoredPaths::default(), (None, None), &root), &[]).is_err());
+        std::fs::remove_dir_all(&root).unwrap();
     }
 
     #[test]

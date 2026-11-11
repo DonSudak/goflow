@@ -43,5 +43,5 @@ export const resetGodotPath = (kind: GodotPathKind) => update(invoke<GodotSettin
 
 export const setAutoExport = (enabled: boolean) => update(invoke<GodotSettings>('set_auto_export', {enabled}));
 
-/** `--path <project> -- --dialogue <res> --cue <cue>` with the executable from Settings (argv built and validated in Rust). */
-export const launchGodot = (project: string, dialogueRes: string, cue: string) => invoke<number>('play_in_godot', {project, dialogueRes, cue});
+/** Runs Godot at a cue. Executable and Godot project come from Rust-held settings; Rust validates both strings and builds the argv. */
+export const launchGodot = (dialogueRes: string, cue: string) => invoke<number>('play_in_godot', {dialogueRes, cue});

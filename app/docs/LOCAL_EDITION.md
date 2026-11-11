@@ -89,7 +89,7 @@ goflow-ut --godot-project ~/games/useless-tycoon [--project-dir <dir>]
   folders (Godot project, projects dir, dialogue dir) and the Godot executable are chosen in native dialogs
   opened by Rust (`pick_godot_path`) or come from CLI args, are validated (project.godot present; executable
   file named `*godot*`) and persisted in `<app config>/godot-paths.json` (denied to the webview fs scope).
-  `play_in_godot(project, dialogue_res, cue)` validates `res://<path>.dialogue` / `[A-Za-z0-9_]+` and builds the argv.
+  `play_in_godot(dialogue_res, cue)` takes the Godot project and executable only from Rust-held settings (rejecting a project inside app data or inside an editor-writable folder), validates `res://<path>.dialogue` / `[A-Za-z0-9_]+` and builds the argv.
 - fs scope: statically only `$APPDATA/**`; the chosen projects/dialogue folders and the game manifest are added
   at runtime (`fs_scope().allow_directory`) on startup and after each pick. CSP: `default-src 'self'`
   (see `tauri.conf.json`; style-src keeps `'unsafe-inline'` for React inline styles).
