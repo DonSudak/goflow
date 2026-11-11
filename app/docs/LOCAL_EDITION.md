@@ -111,6 +111,22 @@ goflow-ut --godot-project ~/games/useless-tycoon [--project-dir <dir>]
   the cue comes from `DialogueManagerCodeGenerator.cueNames()`.
 - Fonts are bundled (`@fontsource/inter`, `next/font` for Geist): no network needed at runtime.
 
+## Game integration in the editor (desktop)
+
+- **Sync with game** (play bar; also automatically on project open when `game_manifest.json` changed since the
+  last sync of that project): game keys become variables with `source: "game"` (badge `game`, `game ro` for
+  `writable: false`; name/type read-only in the variable dialog; read-only keys are disabled as operation
+  targets), manifest characters become entities of the `Character` type (created if missing; matched by the
+  `Game ID` parameter, never duplicated or deleted).
+- **Stage** on narrative nodes: `+ stage` / `edit stage` on the card opens a dialog (speaker, background +
+  transition, show/hide/move rows, CG set/clear, clear stage, scene with 18+ marker). With a manifest every field
+  is a dropdown of manifest ids; without one, free text. Chips summarise the stage on the card; it is saved in
+  `data.stage` through `EditNarrativeNodeCommand` (undo/redo, disk).
+- Export warnings (unknown ids, read-only targets…) from Write to Godot / Play in Godot / auto-export show up as a
+  toast with the count and the first entries.
+- Play in Godot imports the Godot project headless first (`--headless --path <project> --import`) so a freshly
+  written `.dialogue` is compiled before the game starts at the cue.
+
 ## Removed / hidden in the local edition
 
 - **AI** (node fill, bible generation, AI entity creation, AI translation, settings/debug): buttons hidden, routes 501.
