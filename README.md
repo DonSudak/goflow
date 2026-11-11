@@ -19,6 +19,18 @@ Build branching narratives, visual novels, and dialogue systems on an infinite c
 
 <br/>
 
+> **This fork (branch `useless-tycoon`)** is a lightweight local edition of Go Flow used as the narrative editor of a Godot game.
+>
+> - **Desktop app on Tauri** — no backend, no MongoDB, no docker; works offline. Projects are plain `<dir>/<slug>/project.json` files (sorted keys, git-friendly). See [app/docs/LOCAL_EDITION.md](app/docs/LOCAL_EDITION.md).
+> - **Dialogue Manager exporter** — exports graphs to Godot [Dialogue Manager](https://github.com/nathanhoad/godot_dialogue_manager) `.dialogue` files (cues, choices, conditions, variable operations, stage directions, localization CSV); importer for existing `.dialogue` files.
+> - **Godot integration** — game manifest sync (variables, characters, backgrounds), "Write to Godot project", "Play in Godot".
+> - **MCP server** — `cd app && npm run mcp -- --project-dir <dir> [--godot-project <dir>]`: lets AI agents read/edit story graphs and export them ([app/scripts/mcp-server.ts](app/scripts/mcp-server.ts)).
+> - CLI: `npm run export:dialogue`, `npm run import:dialogue`.
+>
+> Build: `cd app && npm ci && npm run tauri:build -- --no-bundle` (Rust + webkit2gtk-4.1) → `app/src-tauri/target/release/goflow-ut`, or grab the Linux binary from [Releases](https://github.com/DonSudak/goflow/releases). Upstream: [goflowspace/goflow](https://github.com/goflowspace/goflow). License: AGPL-3.0, unchanged.
+
+<br/>
+
 <div align="center">
   <img src="docs/images/editor.jpg" alt="Go Flow Editor — branching narrative with AI co-authoring" width="100%" />
 </div>
