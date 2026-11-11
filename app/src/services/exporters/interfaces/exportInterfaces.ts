@@ -68,6 +68,8 @@ export interface ExportConfig {
   manifest?: GameManifest;
   /** Dialogue Manager: entity id -> name, fallback for speaker display names */
   entities?: Array<{id: string; name: string}>;
+  /** Dialogue Manager: append static line IDs `[ID:<node8>_<n>]` (localized projects) */
+  lineIds?: boolean;
 }
 
 /**

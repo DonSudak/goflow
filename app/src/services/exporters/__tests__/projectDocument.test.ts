@@ -106,6 +106,84 @@ describe('project document export', () => {
   });
 });
 
+describe('localization export', () => {
+  const localized = () => {
+    const doc: any = buildSampleProject();
+    const entry = (nodeId: string, translatedText: string | null, targetLanguage = 'en') => ({
+      id: `l_${nodeId}_${targetLanguage}`,
+      timelineId: 'main',
+      layerId: 'root',
+      nodeId,
+      fieldPath: 'data.text',
+      targetLanguage,
+      translatedText,
+      status: 'TRANSLATED'
+    });
+    doc.localization = {
+      config: {baseLanguage: 'ru', targetLanguages: ['en', 'de']},
+      entries: [
+        entry('n1', "Hi, I'm Mira, behind the bar tonight."),
+        entry('c1', 'Pay a "compliment"'),
+        entry('n2', 'Flatterer.\nMira: But nice.'),
+        entry('n2', 'Schmeichler.\nMira: Aber nett.', 'de'),
+        entry('n3', 'Thanks!\nOne line too many.'),
+        entry('n4', null)
+      ]
+    };
+    return doc;
+  };
+
+  test('no localization config -> no line IDs and no CSV', () => {
+    const files = exportProjectDocument(parseProjectDocument(buildSampleProject()), 'sample_project');
+    expect(files.map((f) => f.filename)).toEqual(['sample_project.dialogue']);
+    expect(files[0].content).not.toContain('[ID:');
+  });
+
+  test('localized project: static line IDs on every dialogue line and choice, one CSV with all languages', () => {
+    const [dialogue, csv] = exportProjectDocument(parseProjectDocument(localized()), 'sample_project', parseGameManifest(SAMPLE_MANIFEST));
+    expect(dialogue.filename).toBe('sample_project.dialogue');
+    expect(dialogue.content).toBe(
+      EXPECTED_SAMPLE.replace('Мира: Привет. Я Мира, сегодня за стойкой.', '$& [ID:n1_1]')
+        .replace('50.0 /]', '$& [ID:c1_1]')
+        .replace('< 3 /]', '$& [ID:c2_1]')
+        .replace('Мира: Льстец.', '$& [ID:n2_1]')
+        .replace('Мира: Но приятно.', '$& [ID:n2_2]')
+        .replace('Мира: Спасибо!', '$& [ID:n3_1]')
+        .replace('Мира: Ты снова здесь? Тогда за тебя.', '$& [ID:n4_1]')
+        .replace('Мира: Заходи ещё.', '$& [ID:n5_1]')
+    );
+    expect(csv.filename).toBe('sample_project.csv');
+    expect(csv.content).toBe(
+      [
+        'keys,ru,en,de',
+        `n1_1,"Привет. Я Мира, сегодня за стойкой.","Hi, I'm Mira, behind the bar tonight.",`,
+        'c1_1,Сделать комплимент,"Pay a ""compliment""",',
+        'c2_1,Оставить чаевые,,',
+        'n2_1,Льстец.,Flatterer.,Schmeichler.',
+        'n2_2,Но приятно.,But nice.,Aber nett.',
+        'n3_1,Спасибо!,,',
+        'n4_1,Ты снова здесь? Тогда за тебя.,,',
+        'n5_1,Заходи ещё.,,',
+        ''
+      ].join('\n')
+    );
+    expect(csv.warnings).toEqual(['Translation (en) of node "n3" has 2 dialogue lines, original has 1; left empty']);
+  });
+
+  test('existing [ID:…] in the text is kept and used as the key', () => {
+    const doc = localized();
+    doc.graph.timelines.main.layers.root.nodes.n3.data.text = 'Спасибо! [ID:thanks]';
+    const [dialogue, csv] = exportProjectDocument(parseProjectDocument(doc), 'sample_project', parseGameManifest(SAMPLE_MANIFEST));
+    expect(dialogue.content).toContain('Мира: Спасибо! [ID:thanks]\n');
+    expect(csv.content).toContain('\nthanks,Спасибо!,,\n');
+  });
+
+  test('export is deterministic', () => {
+    const run = () => exportProjectDocument(parseProjectDocument(localized()), 'sample_project', parseGameManifest(SAMPLE_MANIFEST));
+    expect(run()).toEqual(run());
+  });
+});
+
 describe('scripts/export-dialogue.ts', () => {
   const run = (...args: string[]) => spawnSync(process.execPath, [require.resolve('tsx/cli'), 'scripts/export-dialogue.ts', ...args], {cwd: path.resolve(__dirname, '../../../..'), encoding: 'utf8'});
 

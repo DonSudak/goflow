@@ -58,6 +58,27 @@
 или JSON-экспорт Go Flow (`{title, data: {timelines}}`). Один таймлайн → `<slug>.dialogue`, несколько → `<slug>_<timeline-slug>.dialogue`.
 `--check` ничего не пишет и завершается с кодом 1, если какой-то файл отсутствует или отличается (контроль дрейфа в CI).
 
+**Локализация.** Если в проекте заданы целевые языки (`localization.config.targetLanguages`), экспорт добавляет
+к каждой реплике и выбору стабильный ID `[ID:<id узла, 8 символов>_<n>]` (уже стоящий в тексте `[ID:…]` сохраняется и становится ключом)
+и пишет рядом `<slug>.csv` — один файл на проект со всеми таймлайнами и языками, в формате «Simple CSV export» Dialogue Manager:
+`keys,<базовый>,<целевые…>`, ключ — static ID, базовая колонка — текст без `Имя: `. Godot 4.6 импортирует CSV как переводы
+(файлы `<slug>.<lang>.translation` нужно добавить в Project Settings → Localization), Dialogue Manager ищет строку по static ID.
+Перевод узла раскладывается по строкам по порядку реплик; если число реплик в переводе другое — ячейка пустая + предупреждение.
+Без языков экспорт не меняется.
+
+**Импорт `.dialogue` → проект** (`services/importers/dialogueManagerImporter.ts`,
+`npm run import:dialogue -- --in <файл.dialogue|папка> --project-dir <narrative> [--manifest <game_manifest.json>]`):
+`<name>.dialogue` → `<project-dir>/<name>/project.json` (формат локальной редакции, ключи отсортированы, id стабильны;
+повторный импорт сохраняет id/имя/сущности/локализацию и не переписывает файл без изменений). Обратное отображение экспортёра:
+cue → нарративный узел (title = имя cue), ведущие `do stage.*` → stage, хвостовые `do effect/set_flag`, `set vars[...]` → операции,
+последний `do scene()` → `stage.scene`, общий для всех реплик `Имя: ` персонажа из манифеста → `stage.speaker`, `- выбор [if … /]` → выборы,
+`=> cue` → связи, `if/elif/else` → условные связи; тела выборов/веток и продолжения после них → узлы `<cue>_<n>`.
+Всё, что экспортёр не воспроизведёт (неразбираемые условия, неизвестные мутации, `%`, `while`, inline `[if]`, jump-and-return…),
+остаётся дословно в тексте узла (условие выбора — в тексте выбора) с предупреждением, где это меняет редактируемость.
+Файлы в стиле экспортёра возвращаются байт в байт; рукописные — семантически эквивалентно (заголовок-комментарий,
+`flag("x")` → `flag("x") == true`, `a or b` → `(a or b)`, тела выборов и `if` выносятся в отдельные cue, `~ start` добавляется,
+если первая cue называется иначе). Спикер восстанавливается только с манифестом — экспортируйте тоже с `--manifest`.
+
 Фикстуры для Godot-тестов (`tests/fixtures/goflow/sample_project.dialogue` и `sample_project/project.json`, источник — `exporters/data/sampleProject.ts`):
 `DM_FIXTURE_DIR=<godot>/tests/fixtures/goflow npx jest projectDocument -t "sample project"`.
 

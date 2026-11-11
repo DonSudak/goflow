@@ -25,6 +25,7 @@
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "export:dialogue": "tsx scripts/export-dialogue.ts",
+    "import:dialogue": "tsx scripts/import-dialogue.ts",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:engine": "jest \"src/tests/(unit|integration)/.*\\.(ts|tsx)$\" --verbose"
