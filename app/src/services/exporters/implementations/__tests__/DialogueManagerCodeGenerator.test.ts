@@ -165,7 +165,7 @@ describe('DialogueManagerCodeGenerator', () => {
     expect(code).toContain('~ a\nset vars["seen.a"] = true\nA\n');
     expect(code).toContain('~ b\nset vars["seen.b"] = true\n');
     expect(code).toContain('if vars.get("seen.a", false)\n\t=> a');
-    expect(code).toContain('if (not vars.get("seen.b", false) or chance(1))');
+    expect(code).toContain('if (not vars.get("seen.b", false) or chance(1.0))');
     expect(code).not.toContain('seen.s');
   });
 

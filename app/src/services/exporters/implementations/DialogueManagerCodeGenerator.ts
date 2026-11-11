@@ -23,10 +23,28 @@ type VarKind = {kind: 'game'; key: string; manifest?: ManifestGameKey} | {kind: 
 const TAB = '\t';
 const COMPARISON: Record<string, string> = {eq: '==', neq: '!=', gt: '>', gte: '>=', lt: '<', lte: '<='};
 const LOCAL_OPS: Record<string, string> = {addition: '+', join: '+', subtract: '-', multiply: '*', divide: '/'};
-/** Lines that are Dialogue Manager syntax, not dialogue: never get a speaker prefix. */
-const NON_DIALOGUE = /^(\s|do!? |set |if |elif |else\b|while |match |when |=>|#|~ |- |%|\[)/;
+/** Lines that are Dialogue Manager syntax, not dialogue: never get a speaker prefix or a line ID. */
+export const NON_DIALOGUE = /^(\s|do!? |set |if |elif |else\b|while |match |when |=>|#|~ |- |%)/;
 /** Explicit `Name: text` line. */
-const HAS_SPEAKER = /^[^:\s][^:]{0,40}: /;
+export const HAS_SPEAKER = /^[^:\s[][^:]{0,40}: /;
+const STATIC_ID = /\[ID:([^\]]*)\]/;
+
+/** Non-empty lines of a node text that Dialogue Manager shows as dialogue (translatable). */
+export const dialogueLines = (text: string): string[] =>
+  (text || '')
+    .split('\n')
+    .map((l) => l.trimEnd())
+    .filter((l) => l.trim() && !NON_DIALOGUE.test(l));
+
+/** A translatable line as emitted: static ID key and the text Dialogue Manager will translate (no `Name: `, no ID). */
+export interface LocalizableLine {
+  key: string;
+  nodeId: string;
+  /** index among dialogueLines(node text); 0 for a choice */
+  index: number;
+  kind: 'line' | 'choice';
+  text: string;
+}
 
 export class DialogueManagerCodeGenerator implements ICodeGenerator, IFormatValidator {
   private story: ExportableStory = {} as ExportableStory;
@@ -37,19 +55,25 @@ export class DialogueManagerCodeGenerator implements ICodeGenerator, IFormatVali
   private warnings: string[] = [];
   private manifest?: GameManifest;
   private entities: Array<{id: string; name: string}> = [];
+  private lineIds = false;
+  private idPrefixes = new Map<string, string>();
+  private localizable: LocalizableLine[] = [];
 
   generateCode(story: ExportableStory, config: ExportConfig): string {
     this.manifest = config.manifest;
     this.entities = config.entities || [];
+    this.lineIds = !!config.lineIds;
+    this.localizable = [];
     this.prepare(story);
     const lines: string[] = [];
     if (config.includeComments) lines.push(`# ${story.title} — exported from Go Flow (Dialogue Manager)`, '');
 
     const start = this.nodes.get(story.startNodeId);
-    lines.push('~ start');
     if (start?.type === 'narrative') {
-      lines.push(`=> ${this.names.get(start.id)}`);
+      // A start node titled "start" is the entry cue itself; otherwise `~ start` redirects to it.
+      if (this.names.get(start.id) !== 'start') lines.push('~ start', `=> ${this.names.get(start.id)}`);
     } else {
+      lines.push('~ start');
       this.warn(`Start node "${story.startNodeId}" is not a narrative node; start jumps to END`);
       lines.push('=> END');
     }
@@ -57,17 +81,24 @@ export class DialogueManagerCodeGenerator implements ICodeGenerator, IFormatVali
     const narratives = story.nodes.filter((n): n is NarrativeNode => n.type === 'narrative');
     // Start node first, the rest in graph order.
     narratives.sort((a, b) => Number(b.id === story.startNodeId) - Number(a.id === story.startNodeId));
-    for (const node of narratives) {
+    narratives.forEach((node) => {
       const cue = this.names.get(node.id)!;
-      lines.push('', `~ ${cue}`);
+      if (lines.length > 0 && lines[lines.length - 1] !== '') lines.push('');
+      lines.push(`~ ${cue}`);
       if (this.seenTargets.has(node.id)) lines.push(`set vars["seen.${cue}"] = true`);
       const stage = node.data.stage;
       if (stage) this.emitStage(stage, node.id, lines);
       const speaker = stage?.speaker ? this.speakerName(stage.speaker, node.id) : '';
+      let index = 0;
       for (const textLine of (node.data.text || '').split('\n')) {
         if (!textLine.trim()) continue;
         const line = textLine.trimEnd();
-        lines.push(speaker && !NON_DIALOGUE.test(line) && !HAS_SPEAKER.test(line) ? `${speaker}: ${line}` : line);
+        if (NON_DIALOGUE.test(line)) {
+          lines.push(line);
+          continue;
+        }
+        const prefixed = speaker && !HAS_SPEAKER.test(line) ? `${speaker}: ${line}` : line;
+        lines.push(this.withLineId(prefixed, node.id, index++, 'line', line.replace(HAS_SPEAKER, '')));
       }
       this.emitOperations(node, '', lines);
       if (stage?.scene) {
@@ -80,8 +111,22 @@ export class DialogueManagerCodeGenerator implements ICodeGenerator, IFormatVali
         lines.push(`do scene(${JSON.stringify(stage.scene)})`);
       }
       this.emitTransitions(this.outgoing.get(node.id) || [], '', lines);
-    }
+    });
     return lines.join('\n') + '\n';
+  }
+
+  /** Translatable lines of the last generateCode() call (with `lineIds`), in file order. */
+  getLocalizableLines(): LocalizableLine[] {
+    return [...this.localizable];
+  }
+
+  /** Appends ` [ID:<node8>_<n>]` (n from 1) when line IDs are on; an existing `[ID:…]` is kept as the key. */
+  private withLineId(line: string, nodeId: string, index: number, kind: LocalizableLine['kind'], text: string): string {
+    if (!this.lineIds) return line;
+    const existing = STATIC_ID.exec(line);
+    const key = existing ? existing[1] : `${this.idPrefixes.get(nodeId)}_${index + 1}`;
+    this.localizable.push({key, nodeId, index, kind, text: text.replace(STATIC_ID, '').trim()});
+    return existing ? line : `${line} [ID:${key}]`;
   }
 
   generateReadme(story: ExportableStory): string {
@@ -205,13 +250,23 @@ export class DialogueManagerCodeGenerator implements ICodeGenerator, IFormatVali
       }
     }
 
-    // `start` is our entry cue; END/end are Dialogue Manager keywords.
+    // `start` is our entry cue (the start node may own it); END/end are Dialogue Manager keywords.
     const used = new Set(['start', 'end', 'END']);
     this.names = new Map();
+    const slugOf = (node: Node) => (node.type === 'narrative' && node.data.title ? generateInternalName(node.data.title.trim()) : '');
+    const start = this.nodes.get(story.startNodeId);
+    if (start?.type === 'narrative' && slugOf(start) === 'start') this.names.set(start.id, 'start');
+    this.idPrefixes = new Map();
+    const usedPrefixes = new Set<string>();
     for (const node of story.nodes) {
       if (node.type !== 'narrative' && node.type !== 'choice') continue;
-      const title = node.type === 'narrative' ? node.data.title : '';
-      const slug = title ? generateInternalName(title.trim()) : '';
+      const clean = node.id.replace(/[^a-zA-Z0-9]/g, '');
+      let prefix = usedPrefixes.has(clean.slice(0, 8)) ? clean : clean.slice(0, 8);
+      for (let i = 2; usedPrefixes.has(prefix); i++) prefix = `${clean}${i}`;
+      usedPrefixes.add(prefix);
+      this.idPrefixes.set(node.id, prefix);
+      if (this.names.has(node.id)) continue;
+      const slug = slugOf(node);
       const base = /[a-z0-9]/.test(slug) ? slug : `${node.type === 'narrative' ? 'n' : 'c'}_${node.id.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 8)}`;
       let name = base;
       for (let i = 2; used.has(name); i++) name = `${base}_${i}`;
@@ -233,7 +288,7 @@ export class DialogueManagerCodeGenerator implements ICodeGenerator, IFormatVali
       const choice = this.nodes.get(edge.endNodeId) as ChoiceNode;
       const text = (choice.data.text || '').replace(/\s*\n\s*/g, ' ').trim();
       const cond = this.conditionCode(edge.conditions);
-      lines.push(`${indent}- ${text}${cond ? ` [if ${cond} /]` : ''}`);
+      lines.push(this.withLineId(`${indent}- ${text}${cond ? ` [if ${cond} /]` : ''}`, choice.id, 0, 'choice', text));
       const body = indent + TAB;
       if (this.seenTargets.has(choice.id)) lines.push(`${body}set vars["seen.${this.names.get(choice.id)}"] = true`);
       this.emitOperations(choice, body, lines);
@@ -390,7 +445,7 @@ export class DialogueManagerCodeGenerator implements ICodeGenerator, IFormatVali
     switch (c.type) {
       case ConditionType.PROBABILITY:
         // Dialogue Manager cannot call randf(); StoryBridge.chance(p) rolls 0..1.
-        return `chance(${c.probability ?? 0})`;
+        return `chance(${this.float(c.probability ?? 0)})`;
       case ConditionType.NODE_HAPPENED:
       case ConditionType.NODE_NOT_HAPPENED: {
         const name = c.nodeId && this.names.get(c.nodeId);
