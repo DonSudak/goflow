@@ -1,13 +1,13 @@
 /**
  * Sample Useless Tycoon project (local edition document format) + matching game manifest.
- * Source of tests/fixtures/goflow/sample_project/project.json and sample_export.dialogue in the game repo.
+ * Source of tests/fixtures/goflow/sample_project/project.json and sample_project.dialogue in the game repo.
  */
 import {ConditionGroup, ConditionType, Link, Node} from '@types-folder/nodes';
 import {Variable, VariableOperation} from '@types-folder/variables';
 
 export const SAMPLE_MANIFEST = {
   version: 1,
-  game_keys: [{key: 'relationships.affection.mira', type: 'float', initial: 0, module: 'relationships', writable: true}],
+  game_keys: [{key: 'relationships.affection.mira', type: 'float', initial: 0, module: 'relationships', writable: true, read_key: 'relationships.mira.affection'}],
   flags: ['met_mira'],
   characters: [{id: 'mira', name: 'Мира', expressions: ['neutral', 'smile'], outfits: ['work']}],
   backgrounds: ['bar'],

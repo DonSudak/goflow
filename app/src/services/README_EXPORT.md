@@ -58,7 +58,7 @@
 или JSON-экспорт Go Flow (`{title, data: {timelines}}`). Один таймлайн → `<slug>.dialogue`, несколько → `<slug>_<timeline-slug>.dialogue`.
 `--check` ничего не пишет и завершается с кодом 1, если какой-то файл отсутствует или отличается (контроль дрейфа в CI).
 
-Фикстуры для Godot-тестов (`tests/fixtures/goflow/sample_export.dialogue` и `sample_project/project.json`, источник — `exporters/data/sampleProject.ts`):
+Фикстуры для Godot-тестов (`tests/fixtures/goflow/sample_project.dialogue` и `sample_project/project.json`, источник — `exporters/data/sampleProject.ts`):
 `DM_FIXTURE_DIR=<godot>/tests/fixtures/goflow npx jest projectDocument -t "sample project"`.
 
 ## Быстрый старт

@@ -296,7 +296,7 @@ export class DialogueManagerCodeGenerator implements ICodeGenerator, IFormatVali
     // Unpublished game keys read as null, so always pass the initial value as default.
     if (v.kind === 'game') {
       const initial = v.manifest ? this.literal(v.manifest.initial, mapManifestType(v.manifest.type, v.manifest.initial)) : this.literal(variable.value, variable.type);
-      return `state(${JSON.stringify(v.key)}, ${initial})`;
+      return `state(${JSON.stringify(v.manifest?.read_key ?? v.key)}, ${initial})`;
     }
     if (v.kind === 'flag') return `flag(${JSON.stringify(v.key)})`;
     return `vars.get(${JSON.stringify(v.key)}, ${this.literal(variable.value, variable.type)})`;

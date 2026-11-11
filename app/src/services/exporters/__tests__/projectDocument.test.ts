@@ -17,7 +17,7 @@ do stage.bg("bar", "fade")
 do stage.show("center", "mira", "smile", "work")
 Мира: Привет. Я Мира, сегодня за стойкой.
 do set_flag("met_mira", true)
-- Сделать комплимент [if state("relationships.affection.mira", 0.0) < 50.0 /]
+- Сделать комплимент [if state("relationships.mira.affection", 0.0) < 50.0 /]
 \tdo effect({"relationships.affection.mira": 15.0})
 \t=> kompliment
 - Оставить чаевые [if vars.get("tips", 0) < 3 /]
@@ -63,13 +63,16 @@ describe('project document export', () => {
     if (dir) {
       fs.mkdirSync(path.join(dir, 'sample_project'), {recursive: true});
       fs.writeFileSync(path.join(dir, 'sample_project', 'project.json'), JSON.stringify(buildSampleProject(), null, 2) + '\n');
-      fs.writeFileSync(path.join(dir, 'sample_export.dialogue'), file.content);
+      fs.writeFileSync(path.join(dir, 'sample_project.dialogue'), file.content);
     }
   });
 
-  test('output does not depend on the manifest when ids are valid (entity names give speakers)', () => {
+  // Without a manifest there is no read_key, so game keys are read by their effect name.
+  const NO_MANIFEST = EXPECTED_SAMPLE.replace('state("relationships.mira.affection"', 'state("relationships.affection.mira"');
+
+  test('without a manifest only read_key mapping differs (entity names give speakers)', () => {
     const [file] = exportProjectDocument(parseProjectDocument(buildSampleProject()), 'sample_project');
-    expect(file.content).toBe(EXPECTED_SAMPLE);
+    expect(file.content).toBe(NO_MANIFEST);
   });
 
   test('Go Flow JSON export format is accepted', () => {
@@ -78,7 +81,7 @@ describe('project document export', () => {
     const [file] = exportProjectDocument(parseProjectDocument(jsonExport), 'x');
     expect(file.filename).toBe('x.dialogue');
     // No entities in a JSON export: the speaker id is the display name; explicit `Мира:` lines stay.
-    expect(file.content).toBe(EXPECTED_SAMPLE.replace(/Мира: /g, 'mira: ').replace('mira: Но приятно.', 'Мира: Но приятно.'));
+    expect(file.content).toBe(NO_MANIFEST.replace(/Мира: /g, 'mira: ').replace('mira: Но приятно.', 'Мира: Но приятно.'));
   });
 
   test('several timelines -> <slug>_<timeline-slug>.dialogue in timeline order', () => {
