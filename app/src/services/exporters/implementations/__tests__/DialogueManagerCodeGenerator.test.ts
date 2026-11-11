@@ -96,7 +96,7 @@ describe('DialogueManagerCodeGenerator', () => {
     );
     expect(code).toContain('do effect({"relationships.affection.mira": 15.0})');
     expect(code).toContain('do effect({"household.money": -2.5})');
-    expect(code).toContain('if get("household.money", 0) > 100\n\t=> r\nelse\n\t=> END');
+    expect(code).toContain('if state("household.money", 0) > 100\n\t=> r\nelse\n\t=> END');
     expect(gen.getWarnings()).toEqual([]);
   });
 

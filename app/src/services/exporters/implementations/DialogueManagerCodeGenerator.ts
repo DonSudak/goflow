@@ -4,7 +4,7 @@
  * Mapping (see README_EXPORT.md):
  * - start node -> `~ start` + jump; every narrative node -> own cue (slug of title or `n_<id8>`)
  * - narrative text is emitted verbatim; choices -> `- text [if cond /]` responses
- * - variables `<module>.<key>` (game keys) -> `do effect({...})` / `get("...", initial)`,
+ * - variables `<module>.<key>` (game keys) -> `do effect({...})` / `state("...", initial)`,
  *   `flags.<x>` -> `do set_flag(...)` / `flag(...)`, anything else -> `vars["..."]` (StoryBridge.vars)
  */
 import {ChoiceNode, Condition, ConditionGroup, ConditionType, Link, NarrativeNode, Node} from '@types-folder/nodes';
@@ -13,7 +13,7 @@ import {OperationTarget, Variable, VariableOperation} from '@types-folder/variab
 import {generateInternalName} from '../../../utils/transliteration';
 import {ExportConfig, ExportFormat, ExportableStory, ICodeGenerator, IFormatValidator} from '../interfaces/exportInterfaces';
 
-/** Game state modules readable via `get()` and writable via `effect()`. */
+/** Game state modules readable via `state()` and writable via `effect()`. */
 export const GAME_MODULES = ['relationships', 'household', 'uselessness', 'success_threat', 'inventory', 'hero'];
 
 type VarKind = {kind: 'game'; key: string} | {kind: 'flag'; key: string} | {kind: 'local'; key: string};
@@ -191,7 +191,7 @@ export class DialogueManagerCodeGenerator implements ICodeGenerator, IFormatVali
   private read(variable: Variable): string {
     const v = this.classify(variable);
     // Unpublished game keys read as null, so always pass the initial value as default.
-    if (v.kind === 'game') return `get(${JSON.stringify(v.key)}, ${this.literal(variable.value, variable.type)})`;
+    if (v.kind === 'game') return `state(${JSON.stringify(v.key)}, ${this.literal(variable.value, variable.type)})`;
     if (v.kind === 'flag') return `flag(${JSON.stringify(v.key)})`;
     return `vars.get(${JSON.stringify(v.key)}, ${this.literal(variable.value, variable.type)})`;
   }

@@ -33,7 +33,7 @@
 | нарративный узел | `~ <slug(title)>` (транслит, дедуп `_2`; без заголовка — `n_<id8>`; `start`/`end` зарезервированы), текст построчно как есть, в конце `=> <cue>` или `=> END` |
 | выборы | `- текст [if усл /]`, тело с отступом: операции + `=> <cue>` |
 | прямые связи с условиями | `if` / `elif` / `else` с переходами (без безусловной связи — `else => END`) |
-| переменная `<module>.<key>`, module ∈ relationships, household, uselessness, success_threat, inventory, hero | addition/subtract числа → `do effect({"<key>": ±float})`; чтение → `get("<key>", <начальное>)`; прочие операции — предупреждение экспорта, операция пропускается |
+| переменная `<module>.<key>`, module ∈ relationships, household, uselessness, success_threat, inventory, hero | addition/subtract числа → `do effect({"<key>": ±float})`; чтение → `state("<key>", <начальное>)` (нативный `Object.get` в DM принимает 1 аргумент); прочие операции — предупреждение экспорта, операция пропускается |
 | `flags.<x>` | override → `do set_flag("x", v)`, invert → `do set_flag("x", not flag("x"))`; чтение → `flag("x")` |
 | прочие переменные (локальные) | `set vars["<name>"] = …`, чтение `vars.get("<name>", <начальное>)` |
 | вероятность | `chance(p)` (p в 0..1; `randf()` в Dialogue Manager недоступен) |
