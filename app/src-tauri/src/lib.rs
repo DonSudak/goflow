@@ -131,6 +131,10 @@ pub fn godot_argv(project: &Path, dialogue_res: &str, cue: &str) -> Vec<String> 
     ]
 }
 
+pub fn godot_import_argv(project: &Path) -> Vec<String> {
+    vec!["--headless".into(), "--path".into(), project.to_string_lossy().into_owned(), "--import".into()]
+}
+
 // ---------- persistence ----------
 
 fn paths_file<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, String> {
@@ -255,8 +259,10 @@ pub fn trusted_godot_project(s: &GodotSettings, app_dirs: &[PathBuf]) -> Result<
 
 /// `<godot exe> --path <godot project> -- --dialogue <res> --cue <cue>`; returns the pid.
 /// Executable and project come from Rust-held settings; only the two validated strings come from the webview.
+/// A freshly written `.dialogue` must be imported (compiled by Dialogue Manager) before the game can load it,
+/// so the project is imported headless first (fixed argv) and only then started at the cue.
 #[tauri::command]
-fn play_in_godot<R: Runtime>(app: AppHandle<R>, dialogue_res: String, cue: String) -> Result<u32, String> {
+async fn play_in_godot<R: Runtime>(app: AppHandle<R>, dialogue_res: String, cue: String) -> Result<u32, String> {
     if !valid_dialogue_res(&dialogue_res) {
         return Err(format!("Invalid dialogue path {dialogue_res}"));
     }
@@ -268,6 +274,13 @@ fn play_in_godot<R: Runtime>(app: AppHandle<R>, dialogue_res: String, cue: Strin
     let project = trusted_godot_project(&settings, &app_dirs)?;
     let exe = load_stored(&app).godot_exe.map(PathBuf::from).filter(|p| is_godot_exe(p));
     let exe = exe.ok_or("Choose the Godot executable in Settings → Godot first")?;
+    let imported = Command::new(&exe)
+        .args(godot_import_argv(&project))
+        .status()
+        .map_err(|e| format!("Failed to run the Godot import: {e}"))?;
+    if !imported.success() {
+        return Err(format!("Godot import failed ({imported})"));
+    }
     Command::new(&exe)
         .args(godot_argv(&project, &dialogue_res, &cue))
         .spawn()
