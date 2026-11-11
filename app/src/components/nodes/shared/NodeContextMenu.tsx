@@ -3,7 +3,9 @@
 import React, {useEffect, useRef, useState} from 'react';
 
 import {useTeamAIAccess} from '@hooks/useTeamAIAccess';
-import {MagicWandIcon, PlayIcon, TrashIcon} from '@radix-ui/react-icons';
+import {MagicWandIcon, PlayIcon, RocketIcon, TrashIcon} from '@radix-ui/react-icons';
+import {playInGodotAction} from '@services/godot/playInGodotAction';
+import {isTauri} from '@services/godot/settings';
 import {Node} from '@xyflow/react';
 import {useTranslation} from 'react-i18next';
 import {isAIEnabled} from 'src/utils/edition';
@@ -185,6 +187,16 @@ const NodeContextMenu: React.FC<NodeContextMenuProps> = ({isOpen, position, node
       icon: PlayIcon,
       onClick: handlePlay
     });
+    if (isTauri()) {
+      menuItems.push({
+        label: 'Play in Godot',
+        icon: RocketIcon,
+        onClick: () => {
+          void playInGodotAction(node.id);
+          onClose();
+        }
+      });
+    }
   }
 
   // Разделитель перед удалением

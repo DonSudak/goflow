@@ -93,6 +93,12 @@ export class DialogueManagerCodeGenerator implements ICodeGenerator, IFormatVali
     ].join('\n');
   }
 
+  /** Node id -> cue name exactly as generateCode() emits it (used by "Play in Godot" to jump to a node). */
+  cueNames(story: ExportableStory): Map<string, string> {
+    this.prepare(story);
+    return new Map(this.names);
+  }
+
   getFileExtension(): string {
     return '.dialogue';
   }

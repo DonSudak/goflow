@@ -6,12 +6,14 @@ import {useRouter} from 'next/navigation';
 
 import {useCurrentProject} from '@hooks/useCurrentProject';
 import {useCurrentRoute} from '@hooks/useCurrentRoute';
+import {useIsTauri} from '@hooks/useIsTauri';
 import {useUnreadComments} from '@hooks/useUnreadComments';
 import {useUserInitialization} from '@hooks/useUserInitialization';
-import {BellIcon, ExclamationTriangleIcon, PlayIcon, Share2Icon} from '@radix-ui/react-icons';
+import {BellIcon, ExclamationTriangleIcon, PlayIcon, RocketIcon, Share2Icon} from '@radix-ui/react-icons';
 import {Button, Dialog, Flex, Separator, Text} from '@radix-ui/themes';
 import {trackPlaybackLaunch} from '@services/analytics';
 import {CommentsAPI} from '@services/comments.api';
+import {playInGodotAction} from '@services/godot/playInGodotAction';
 import {notificationService} from '@services/notificationService';
 import {ProjectDataService} from '@services/projectDataService';
 import {useReactFlow} from '@xyflow/react';
@@ -45,6 +47,7 @@ const PlayBar = () => {
   const {t} = useTranslation();
   const router = useRouter();
   const teamId = useReliableTeamId();
+  const isDesktop = useIsTauri();
   const projectId = useCurrentProject().projectId || ProjectDataService.getStatus().currentProjectId || 'undefined';
   const timelineId = useGraphStore.getState().currentTimelineId || 'undefined';
   const reactFlowInstance = useReactFlow();
@@ -362,6 +365,14 @@ const PlayBar = () => {
                 {t('play_bar.play_button', 'Play')}
               </Text>
             </Button>
+            {isDesktop && (
+              <Button size='2' variant='surface' onClick={() => playInGodotAction()}>
+                <RocketIcon className={s.icon} />
+                <Text size='2' weight='medium'>
+                  Play in Godot
+                </Text>
+              </Button>
+            )}
 
             {isCloud() && (
               <>

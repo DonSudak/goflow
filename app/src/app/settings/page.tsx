@@ -5,6 +5,7 @@ import React, {useEffect, useState} from 'react';
 import {useRouter} from 'next/navigation';
 
 import {useFlowMenu} from '@hooks/useFlowMenu';
+import {useIsTauri} from '@hooks/useIsTauri';
 import {useProjects} from '@hooks/useProjects';
 import {useUserInitialization} from '@hooks/useUserInitialization';
 import {GearIcon, MoonIcon, TrashIcon, UpdateIcon} from '@radix-ui/react-icons';
@@ -24,9 +25,12 @@ import DeleteTeamModal from '@components/Dashboard/TeamManagement/DeleteTeamModa
 import ThemeSelector from '@components/Dashboard/ThemeSelector/ThemeSelector';
 import DashboardLayout from '@components/Dashboard/layouts/DashboardLayout';
 
+import GodotSettingsSection from './GodotSettingsSection';
+
 import s from './page.module.css';
 
 const SettingsPageContent: React.FC = () => {
+  const isDesktop = useIsTauri();
   const {t, i18n} = useTranslation();
   const router = useRouter();
   const {currentTeam, loadUserTeams, updateTeam, deleteTeam, isInitialized, getCurrentUserPermissions, loadTeamMembers, teamMembers} = useTeamStore();
@@ -174,6 +178,9 @@ const SettingsPageContent: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* Desktop (Tauri): Godot project paths */}
+          {isDesktop && <GodotSettingsSection />}
 
           {/* Настройки внешнего вида */}
           <div className={s.settingsSection}>

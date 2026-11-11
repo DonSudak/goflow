@@ -28,6 +28,7 @@ import {getAggregatedPlayParams} from '../../utils/analyticsUtils';
 import {downloadFile} from '../../utils/download';
 import {generateHTMLTemplate, prepareDataForHTML} from '../../utils/htmlPreview';
 import {exportLocalizationData} from '../../utils/localizationExport';
+import GodotWriteButton from './GodotWriteButton';
 
 import styles from './ExportModal.module.scss';
 
@@ -625,6 +626,7 @@ This export contains your project data in a structured format.
             </div>
 
             <div className={styles.button_container}>
+              {selectedFormat === 'dialogue_manager' && <GodotWriteButton onDone={() => onOpenChange(false)} />}
               <Button variant='soft' color='gray' onClick={() => onOpenChange(false)} className={styles.cancel_button}>
                 {t('export_modal.cancel_button')}
               </Button>
