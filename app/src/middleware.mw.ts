@@ -1,3 +1,4 @@
+// Named *.mw.ts so next.config.ts can exclude it from the local edition (static export has no middleware).
 import {NextResponse} from 'next/server';
 import type {NextRequest} from 'next/server';
 
