@@ -6,7 +6,8 @@ import {produce} from 'immer';
 import {nanoid} from 'nanoid';
 import {EnterMethodType, trackLayerEnter} from 'src/services/analytics';
 import {api} from 'src/services/api';
-import {clearOperations, loadProject, saveProject} from 'src/services/dbService';
+import {clearOperations, loadProject, saveProject, setLocalOperationListener} from 'src/services/dbService';
+import {isLocal} from 'src/utils/edition';
 import {createEmptyProjectState} from 'src/utils/projectStateHelpers';
 import {create} from 'zustand';
 import {devtools, subscribeWithSelector} from 'zustand/middleware';
@@ -2120,3 +2121,12 @@ export const useGraphStore = create<GraphStore>()(
     {name: 'graphStore'}
   )
 );
+
+// Local edition: persist the full graph snapshot shortly after every user operation
+if (isLocal()) {
+  let saveTimer: ReturnType<typeof setTimeout> | undefined;
+  setLocalOperationListener(() => {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => useGraphStore.getState().saveToDb(), 200);
+  });
+}

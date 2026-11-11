@@ -1,5 +1,6 @@
 import {useEffect, useRef} from 'react';
 
+import {api} from '@services/api';
 import {AuthService} from '@services/authService';
 import {ampli} from 'src/ampli';
 
@@ -30,7 +31,8 @@ export const useUserInitialization = () => {
       const currentUser = useUserStore.getState().user;
       if (!currentUser) {
         hasInitialized.current = true;
-        fetch(`${getApiUrl()}/auth/me`)
+        api
+          .fetchWithAuth(`${getApiUrl()}/auth/me`)
           .then((response) => {
             if (response.ok) return response.json();
             throw new Error('OSS auth failed');

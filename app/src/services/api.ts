@@ -77,10 +77,15 @@ import {
   UpdateProjectAccessRequest
 } from '@types-folder/team';
 
+import {isLocal, isOSS} from '../utils/edition';
 import {getApiUrl} from '../utils/environment';
 import {ISyncResult} from './interfaces/syncInterfaces';
+import {LocalApi} from './local/localApi';
 
 export const API_URL = getApiUrl();
+
+/** Local edition: in-browser backend (see services/local). Null in cloud/oss. */
+export const localApi: LocalApi | null = isLocal() ? new LocalApi(API_URL) : null;
 
 declare const fetch: typeof globalThis.fetch;
 
@@ -310,7 +315,7 @@ export class InsufficientCreditsError extends Error {
 class ApiService {
   private isRefreshing = false;
   private refreshPromise: Promise<void> | null = null;
-  private readonly isOSSEdition = process.env.NEXT_PUBLIC_EDITION === 'oss';
+  private readonly isOSSEdition = isOSS();
 
   private getHeaders(): HeadersInit {
     const token = localStorage.getItem('auth_token');
@@ -370,6 +375,9 @@ class ApiService {
   }
 
   async fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
+    // Single switch point of the local edition: every API call is served by LocalApi
+    if (localApi) return localApi.fetch(url, options);
+
     let response = await fetch(url, {
       ...options,
       headers: {
@@ -2608,6 +2616,7 @@ class ApiService {
    * Получить прямой URL thumbnail через proxy (для интеграции с <img> тегами)
    */
   getThumbnailProxyUrl(teamId: string, projectId: string, entityId: string, parameterId: string, cacheBuster?: string): string {
+    if (localApi) return localApi.imageUrl(projectId, entityId, parameterId);
     const token = localStorage.getItem('auth_token');
     const baseUrl = `${API_URL}/images/proxy/thumbnail/${teamId}/${projectId}/${entityId}/${parameterId}`;
 

@@ -4,6 +4,8 @@ import React, {useEffect, useState} from 'react';
 
 import {usePathname, useRouter} from 'next/navigation';
 
+import {api} from '@services/api';
+
 import useUserStore from '@store/useUserStore';
 
 import {isOSS} from '../../utils/edition';
@@ -26,7 +28,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({children, fallback}) => {
       if (isOSS()) {
         if (!user) {
           try {
-            const response = await fetch(`${getApiUrl()}/auth/me`);
+            const response = await api.fetchWithAuth(`${getApiUrl()}/auth/me`);
             if (response.ok) {
               const data = await response.json();
               setUser(data.user);

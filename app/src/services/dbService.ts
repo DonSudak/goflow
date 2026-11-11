@@ -1,5 +1,7 @@
 import Dexie, {type Table} from 'dexie';
 
+import {localApi} from './api';
+
 // Интерфейс для данных проекта
 export interface ProjectData {
   projectId: string;
@@ -91,6 +93,8 @@ const db = new FlowAppDatabase();
 export async function saveProject(projectData: ProjectData): Promise<void> {
   try {
     await db.projects.put(projectData);
+    // Local edition: write the graph through to the project document (source of truth)
+    if (localApi) await localApi.saveGraph(projectData);
     console.log('Project saved to IndexedDB:', projectData.projectId);
   } catch (error) {
     console.error('Failed to save project to IndexedDB:', error);
@@ -127,7 +131,18 @@ export async function deleteProject(projectId: string): Promise<void> {
 }
 
 // Функция для добавления операции в очередь
+// Local edition: there is no backend applying operations to a snapshot, so every operation
+// instead triggers a (debounced) full-snapshot save of the graph — see useGraphStore.
+let localOperationListener: (() => void) | null = null;
+export const setLocalOperationListener = (listener: () => void) => {
+  localOperationListener = listener;
+};
+
 export async function addOperation(operation: object): Promise<void> {
+  if (localApi) {
+    localOperationListener?.();
+    return;
+  }
   try {
     const queueItem: OperationQueueItem = {
       projectId: (operation as any).projectId || 'unknown',
