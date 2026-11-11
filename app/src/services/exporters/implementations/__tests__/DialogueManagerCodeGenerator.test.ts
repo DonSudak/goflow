@@ -1,8 +1,8 @@
-import {ChoiceNode, Condition, ConditionGroup, ConditionType, Link, NarrativeNode, Node} from '@types-folder/nodes';
+import {ChoiceNode, Condition, ConditionGroup, ConditionType, Link, NarrativeNode, Node, NodeStage} from '@types-folder/nodes';
 import {Variable, VariableOperation} from '@types-folder/variables';
-import * as fs from 'fs';
-import * as path from 'path';
 
+import {parseGameManifest} from '../../../gameManifest';
+import {SAMPLE_MANIFEST} from '../../data/sampleProject';
 import {ExportFormat, ExportableStory} from '../../interfaces/exportInterfaces';
 import {DialogueManagerCodeGenerator} from '../DialogueManagerCodeGenerator';
 
@@ -17,7 +17,13 @@ const story = (nodes: Node[], edges: Link[], variables: Variable[] = [], startNo
   metadata: {originalLayers: [], exportedAt: '', version: '1.0'}
 });
 
-const narrative = (id: string, text: string, title = '', operations: VariableOperation[] = []): NarrativeNode => ({id, type: 'narrative', coordinates: {x: 0, y: 0}, data: {title, text}, operations});
+const narrative = (id: string, text: string, title = '', operations: VariableOperation[] = [], stage?: NodeStage): NarrativeNode => ({
+  id,
+  type: 'narrative',
+  coordinates: {x: 0, y: 0},
+  data: {title, text, stage},
+  operations
+});
 const choice = (id: string, text: string, operations: VariableOperation[] = []): ChoiceNode => ({id, type: 'choice', coordinates: {x: 0, y: 0}, data: {text}, operations});
 const link = (id: string, from: string, to: string, conditions: ConditionGroup[] = []): Link => ({id, type: 'link', startNodeId: from, endNodeId: to, conditions});
 const group = (...conditions: Partial<Condition>[]): ConditionGroup[] => [{id: 'g', operator: 'AND', conditions: conditions.map((c, i) => ({id: `c${i}`, ...c}) as Condition)}];
@@ -185,40 +191,106 @@ describe('DialogueManagerCodeGenerator', () => {
     expect(code).toMatch(/^~ start\n=> vstrecha_v_bare\n/);
   });
 
-  test('sample export fixture for Useless Tycoon', () => {
-    const vars: Variable[] = [
-      {id: 'aff', name: 'Привязанность Миры', internalName: 'relationships.affection.mira', type: 'float', value: 0},
-      {id: 'met', name: 'flags.met_mira', type: 'boolean', value: false},
-      {id: 'tips', name: 'tips', type: 'integer', value: 0}
-    ];
-    const nodes: Node[] = [
-      narrative('n1', 'do stage.bg("bar", "fade")\nМира: Привет. Я Мира, сегодня за стойкой.', 'Бар', [op('met', 'override', true)]),
-      choice('c1', 'Сделать комплимент', [op('aff', 'addition', 15)]),
-      choice('c2', 'Оставить чаевые', [op('tips', 'addition', 1)]),
-      narrative('n2', 'Мира: Льстец.', 'Комплимент'),
-      narrative('n3', 'Мира: Спасибо!', 'Чаевые'),
-      narrative('n4', 'Мира: Ты снова здесь? Приятно.', 'Снова'),
-      narrative('n5', 'Мира: Заходи ещё.', 'Финал')
-    ];
-    const edges: Link[] = [
-      link('e1', 'n1', 'c1', group({type: ConditionType.VARIABLE_COMPARISON, varId: 'aff', operator: 'lt', value: 50, valType: 'custom'})),
-      link('e2', 'n1', 'c2', group({type: ConditionType.VARIABLE_COMPARISON, varId: 'tips', operator: 'lt', value: 3, valType: 'custom'})),
-      link('e3', 'c1', 'n2'),
-      link('e4', 'c2', 'n3'),
-      link('e5', 'n2', 'n4', group({type: ConditionType.NODE_HAPPENED, nodeId: 'n3'}, {type: ConditionType.VARIABLE_COMPARISON, varId: 'met', operator: 'eq', value: true, valType: 'custom'})),
-      link('e6', 'n2', 'n5'),
-      link('e7', 'n3', 'n5'),
-      link('e8', 'n4', 'n5')
-    ];
-    const code = gen.generateCode({...story(nodes, edges, vars), title: 'goflow_sample'}, {...config, includeComments: true});
-    expect(gen.getWarnings()).toEqual([]);
-    expect(code).toContain('do effect({"relationships.affection.mira": 15.0})');
-    expect(code).toContain('if (vars.get("seen.chaevye", false) and flag("met_mira") == true)');
+  describe('stage and manifest', () => {
+    const manifest = parseGameManifest(SAMPLE_MANIFEST);
+    const withManifest = {...config, manifest};
 
-    // DM_FIXTURE_OUT=<path> npx jest ... regenerates the Godot-side fixture.
-    if (process.env.DM_FIXTURE_OUT) {
-      fs.mkdirSync(path.dirname(process.env.DM_FIXTURE_OUT), {recursive: true});
-      fs.writeFileSync(process.env.DM_FIXTURE_OUT, code);
-    }
+    test('stage directions are emitted in fixed order before text, scene before the jump', () => {
+      const stage: NodeStage = {
+        scene: 'mira_night',
+        cg: {id: 'mira_toast', transition: 'dissolve'},
+        show: [
+          {slot: 'center', character: 'mira', outfit: 'work'},
+          {slot: 'left', character: 'mira', expression: 'smile', transition: 'cut'}
+        ],
+        move: [{from: 'left', to: 'right'}],
+        hide: [{slot: 'right', transition: 'fade'}],
+        background: {id: 'bar'},
+        clear: true
+      };
+      const code = gen.generateCode(story([narrative('n1', 'Text', 'S', [], stage)], []), withManifest);
+      expect(code).toContain(
+        [
+          '~ s',
+          'do stage.clear()',
+          'do stage.bg("bar")',
+          'do stage.hide("right", "fade")',
+          'do stage.move("left", "right")',
+          'do stage.show("center", "mira", "", "work")',
+          'do stage.show("left", "mira", "smile", "", "cut")',
+          'do stage.cg("mira_toast", "dissolve")',
+          'Text',
+          'do scene("mira_night")',
+          '=> END'
+        ].join('\n')
+      );
+      expect(gen.getWarnings()).toEqual([]);
+    });
+
+    test('cg null clears the cg', () => {
+      const code = gen.generateCode(story([narrative('n1', 'T', 'S', [], {cg: null})], []), config);
+      expect(code).toContain('do stage.clear_cg()\nT');
+    });
+
+    test('speaker prefixes plain lines only, display name from manifest', () => {
+      const text = 'Привет.\nНик: Привет.\ndo stage.bg("bar")\nset vars["x"] = 1\nif flag("a")\n\tНу привет.';
+      const code = gen.generateCode(story([narrative('n1', text, 'S', [], {speaker: 'mira'})], []), withManifest);
+      expect(code).toContain('Мира: Привет.\nНик: Привет.\ndo stage.bg("bar")\nset vars["x"] = 1\nif flag("a")\n\tНу привет.\n');
+    });
+
+    test('speaker name falls back to entity name, then to the id', () => {
+      const s = story([narrative('n1', 'A', 'S', [], {speaker: 'mira'}), narrative('n2', 'B', 'T', [], {speaker: 'ghost'})], [link('e', 'n1', 'n2')]);
+      const code = gen.generateCode(s, {...config, entities: [{id: 'mira', name: 'Mira'}]});
+      expect(code).toContain('Mira: A');
+      expect(code).toContain('ghost: B');
+    });
+
+    test('unknown ids produce warnings when a manifest is given', () => {
+      const stage: NodeStage = {
+        speaker: 'nobody',
+        background: {id: 'moon'},
+        show: [{slot: 'top', character: 'mira', expression: 'angry', outfit: 'coat'}],
+        cg: {id: 'x'},
+        scene: 'nope'
+      };
+      gen.generateCode(story([narrative('n1', 'T', 'S', [], stage)], []), withManifest);
+      const w = gen.getWarnings().join('\n');
+      for (const s of ['background "moon"', 'slot "top"', 'expression of "mira" "angry"', 'outfit of "mira" "coat"', 'cg "x"', 'scene "nope"', 'speaker "nobody"']) {
+        expect(w).toContain(`Unknown ${s}`);
+      }
+      gen.generateCode(story([narrative('n1', 'T', 'S', [], stage)], []), config);
+      expect(gen.getWarnings()).toEqual([]);
+    });
+
+    test('manifest drives game keys: initial value, read-only keys, unknown module keys', () => {
+      const m = parseGameManifest({
+        game_keys: [
+          {key: 'household.money', type: 'int', initial: 100, module: 'household', writable: true},
+          {key: 'hero.age', type: 'int', initial: 20, module: 'hero', writable: false}
+        ],
+        flags: []
+      });
+      const vars: Variable[] = [
+        {id: 'm', name: 'household.money', type: 'float', value: 0},
+        {id: 'a', name: 'hero.age', type: 'integer', value: 0},
+        {id: 'x', name: 'hero.typo', type: 'integer', value: 0},
+        {id: 'f', name: 'flags.unknown', type: 'boolean', value: false}
+      ];
+      const code = gen.generateCode(
+        story(
+          [narrative('n1', 'S', 'S', [op('a', 'addition', 1), op('x', 'addition', 1, 1), op('f', 'override', true, 2)]), narrative('n2', 'R', 'R')],
+          [link('e1', 'n1', 'n2', group({type: ConditionType.VARIABLE_COMPARISON, varId: 'm', operator: 'gt', value: 5, valType: 'custom'}))],
+          vars
+        ),
+        {...config, manifest: m}
+      );
+      expect(code).toContain('if state("household.money", 100) > 5');
+      expect(code).not.toContain('hero.age');
+      expect(code).toContain('set vars["hero.typo"] = vars.get("hero.typo", 0) + 1');
+      const w = gen.getWarnings().join('\n');
+      expect(w).toContain('"hero.age" is read-only');
+      expect(w).toContain('"hero.typo" looks like a game key');
+      expect(w).toContain('Unknown flag "unknown"');
+    });
   });
 });

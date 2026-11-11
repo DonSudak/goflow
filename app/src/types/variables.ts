@@ -7,6 +7,8 @@ export interface Variable {
   type: VariableType;
   value: string | number | boolean;
   description?: string;
+  /** 'game' = synced from the game manifest (syncVariablesFromManifest); absent = user variable */
+  source?: 'game';
 }
 
 // Типы операций с переменными

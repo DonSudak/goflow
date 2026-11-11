@@ -953,6 +953,7 @@ export class EditNarrativeNodeCommand implements Command {
               return {
                 ...node,
                 data: {
+                  ...node.data,
                   title: data.title || '',
                   text: data.text
                 }
@@ -999,6 +1000,7 @@ export class EditNarrativeNodeCommand implements Command {
               return {
                 ...node,
                 data: {
+                  ...node.data,
                   title: data.title || '',
                   text: data.text
                 }

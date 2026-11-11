@@ -25,15 +25,18 @@
 ### Godot — Dialogue Manager (Useless Tycoon) ✅
 
 `ExportFormat.DIALOGUE_MANAGER`, `DialogueManagerCodeGenerator`, один файл `.dialogue` (Dialogue Manager 4.2, отступ — TAB).
-Вызовы идут в `StoryBridge` игры (`get`, `flag`, `set_flag`, `effect`, `chance`, `vars`).
+Вызовы идут в `StoryBridge` игры (`state`, `flag`, `set_flag`, `effect`, `chance`, `scene`, `vars`, `stage`).
 
 | Go Flow | `.dialogue` |
 |---|---|
 | стартовый узел | `~ start` + `=> <cue>` |
 | нарративный узел | `~ <slug(title)>` (транслит, дедуп `_2`; без заголовка — `n_<id8>`; `start`/`end` зарезервированы), текст построчно как есть, в конце `=> <cue>` или `=> END` |
+| `data.stage` нарратива | в начале cue по порядку: `do stage.clear()` → `stage.bg(id, t)` → `stage.hide(slot, t)` → `stage.move(from, to, t)` → `stage.show(slot, character, expression, outfit, t)` → `stage.cg(id, t)` / `stage.clear_cg()` (`cg: null`); незаданные хвостовые аргументы опускаются (дефолты GDScript), промежуточные — `""` |
+| `stage.speaker` | строкам без явного `Имя: ` и не являющимся синтаксисом DM (`do`, `set`, `if`/`elif`/`else`, `=>`, `#`, `- `, отступ…) добавляется `<имя>: `; имя — из манифеста, затем из сущностей проекта, иначе id |
+| `stage.scene` | `do scene("id")` после текста и операций, перед переходом |
 | выборы | `- текст [if усл /]`, тело с отступом: операции + `=> <cue>` |
 | прямые связи с условиями | `if` / `elif` / `else` с переходами (без безусловной связи — `else => END`) |
-| переменная `<module>.<key>`, module ∈ relationships, household, uselessness, success_threat, inventory, hero | addition/subtract числа → `do effect({"<key>": ±float})`; чтение → `state("<key>", <начальное>)` (нативный `Object.get` в DM принимает 1 аргумент); прочие операции — предупреждение экспорта, операция пропускается |
+| игровой ключ: с манифестом — `game_keys[].key`; без — `<module>.<key>`, module ∈ relationships, household, uselessness, success_threat, inventory, hero | addition/subtract числа → `do effect({"<key>": ±float})`; чтение → `state("<key>", <начальное>)` (нативный `Object.get` в DM принимает 1 аргумент); прочие операции — предупреждение экспорта, операция пропускается |
 | `flags.<x>` | override → `do set_flag("x", v)`, invert → `do set_flag("x", not flag("x"))`; чтение → `flag("x")` |
 | прочие переменные (локальные) | `set vars["<name>"] = …`, чтение `vars.get("<name>", <начальное>)` |
 | вероятность | `chance(p)` (p в 0..1; `randf()` в Dialogue Manager недоступен) |
@@ -41,8 +44,22 @@
 
 Ограничения: если у узла есть и выборы, и прямые связи, прямые связи игнорируются (предупреждение);
 у игровых ключей поддерживается только числовая константа как цель операции.
-Фикстура для Godot-тестов перегенерируется так:
-`DM_FIXTURE_OUT=<godot>/tests/fixtures/goflow/sample_export.dialogue npx jest DialogueManagerCodeGenerator -t fixture`.
+
+**Манифест игры** (`src/services/gameManifest`, пишется Godot в `narrative/game_manifest.json`, schema v1,
+лишние/отсутствующие поля допустимы): `ExportConfig.manifest` включает распознавание игровых ключей по `game_keys`
+(дефолт `state()` — `initial` из манифеста; `writable: false` → операция пропускается с предупреждением;
+`<module>.x` вне манифеста → локальная переменная + предупреждение) и проверку id персонажей/эмоций/костюмов/фонов/CG/слотов/сцен/флагов
+(неизвестные → предупреждения). `syncVariablesFromManifest(variables, manifest)` добавляет недостающие игровые ключи как переменные
+(`source: 'game'`, описание `[game] <module>`), обновляет тип/начальное значение существующих и никогда не удаляет пользовательские.
+
+**CLI** (`scripts/export-dialogue.ts`):
+`npm run export:dialogue -- --project-dir <dir> --out <godot>/content/dialogue [--manifest <godot>/narrative/game_manifest.json] [--check]`.
+`<dir>/<slug>/project.json` — документ проекта локальной редакции (`{format, name, graph: {timelines, timelinesMetadata}, entities}`)
+или JSON-экспорт Go Flow (`{title, data: {timelines}}`). Один таймлайн → `<slug>.dialogue`, несколько → `<slug>_<timeline-slug>.dialogue`.
+`--check` ничего не пишет и завершается с кодом 1, если какой-то файл отсутствует или отличается (контроль дрейфа в CI).
+
+Фикстуры для Godot-тестов (`tests/fixtures/goflow/sample_export.dialogue` и `sample_project/project.json`, источник — `exporters/data/sampleProject.ts`):
+`DM_FIXTURE_DIR=<godot>/tests/fixtures/goflow npx jest projectDocument -t "sample project"`.
 
 ## Быстрый старт
 

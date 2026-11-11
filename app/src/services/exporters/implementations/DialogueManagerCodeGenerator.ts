@@ -3,24 +3,30 @@
  *
  * Mapping (see README_EXPORT.md):
  * - start node -> `~ start` + jump; every narrative node -> own cue (slug of title or `n_<id8>`)
- * - narrative text is emitted verbatim; choices -> `- text [if cond /]` responses
+ * - node stage (clear/bg/hide/move/show/cg) -> `do stage.*(...)` at cue start, `stage.scene` -> `do scene()`
+ * - narrative text is emitted verbatim (speaker prefix if `stage.speaker`); choices -> `- text [if cond /]`
  * - variables `<module>.<key>` (game keys) -> `do effect({...})` / `state("...", initial)`,
  *   `flags.<x>` -> `do set_flag(...)` / `flag(...)`, anything else -> `vars["..."]` (StoryBridge.vars)
  */
-import {ChoiceNode, Condition, ConditionGroup, ConditionType, Link, NarrativeNode, Node} from '@types-folder/nodes';
+import {ChoiceNode, Condition, ConditionGroup, ConditionType, Link, NarrativeNode, Node, NodeStage} from '@types-folder/nodes';
 import {OperationTarget, Variable, VariableOperation} from '@types-folder/variables';
 
 import {generateInternalName} from '../../../utils/transliteration';
+import {GameManifest, ManifestGameKey, mapManifestType} from '../../gameManifest';
 import {ExportConfig, ExportFormat, ExportableStory, ICodeGenerator, IFormatValidator} from '../interfaces/exportInterfaces';
 
 /** Game state modules readable via `state()` and writable via `effect()`. */
 export const GAME_MODULES = ['relationships', 'household', 'uselessness', 'success_threat', 'inventory', 'hero'];
 
-type VarKind = {kind: 'game'; key: string} | {kind: 'flag'; key: string} | {kind: 'local'; key: string};
+type VarKind = {kind: 'game'; key: string; manifest?: ManifestGameKey} | {kind: 'flag'; key: string} | {kind: 'local'; key: string};
 
 const TAB = '\t';
 const COMPARISON: Record<string, string> = {eq: '==', neq: '!=', gt: '>', gte: '>=', lt: '<', lte: '<='};
 const LOCAL_OPS: Record<string, string> = {addition: '+', join: '+', subtract: '-', multiply: '*', divide: '/'};
+/** Lines that are Dialogue Manager syntax, not dialogue: never get a speaker prefix. */
+const NON_DIALOGUE = /^(\s|do!? |set |if |elif |else\b|while |match |when |=>|#|~ |- |%|\[)/;
+/** Explicit `Name: text` line. */
+const HAS_SPEAKER = /^[^:\s][^:]{0,40}: /;
 
 export class DialogueManagerCodeGenerator implements ICodeGenerator, IFormatValidator {
   private story: ExportableStory = {} as ExportableStory;
@@ -29,8 +35,12 @@ export class DialogueManagerCodeGenerator implements ICodeGenerator, IFormatVali
   private names = new Map<string, string>();
   private seenTargets = new Set<string>();
   private warnings: string[] = [];
+  private manifest?: GameManifest;
+  private entities: Array<{id: string; name: string}> = [];
 
   generateCode(story: ExportableStory, config: ExportConfig): string {
+    this.manifest = config.manifest;
+    this.entities = config.entities || [];
     this.prepare(story);
     const lines: string[] = [];
     if (config.includeComments) lines.push(`# ${story.title} — exported from Go Flow (Dialogue Manager)`, '');
@@ -40,7 +50,7 @@ export class DialogueManagerCodeGenerator implements ICodeGenerator, IFormatVali
     if (start?.type === 'narrative') {
       lines.push(`=> ${this.names.get(start.id)}`);
     } else {
-      this.warnings.push(`Start node "${story.startNodeId}" is not a narrative node; start jumps to END`);
+      this.warn(`Start node "${story.startNodeId}" is not a narrative node; start jumps to END`);
       lines.push('=> END');
     }
 
@@ -51,10 +61,24 @@ export class DialogueManagerCodeGenerator implements ICodeGenerator, IFormatVali
       const cue = this.names.get(node.id)!;
       lines.push('', `~ ${cue}`);
       if (this.seenTargets.has(node.id)) lines.push(`set vars["seen.${cue}"] = true`);
+      const stage = node.data.stage;
+      if (stage) this.emitStage(stage, node.id, lines);
+      const speaker = stage?.speaker ? this.speakerName(stage.speaker, node.id) : '';
       for (const textLine of (node.data.text || '').split('\n')) {
-        if (textLine.trim()) lines.push(textLine.trimEnd());
+        if (!textLine.trim()) continue;
+        const line = textLine.trimEnd();
+        lines.push(speaker && !NON_DIALOGUE.test(line) && !HAS_SPEAKER.test(line) ? `${speaker}: ${line}` : line);
       }
       this.emitOperations(node, '', lines);
+      if (stage?.scene) {
+        this.check(
+          this.manifest?.scenes.map((x) => x.id),
+          stage.scene,
+          'scene',
+          node.id
+        );
+        lines.push(`do scene(${JSON.stringify(stage.scene)})`);
+      }
       this.emitTransitions(this.outgoing.get(node.id) || [], '', lines);
     }
     return lines.join('\n') + '\n';
@@ -65,7 +89,7 @@ export class DialogueManagerCodeGenerator implements ICodeGenerator, IFormatVali
       `# ${story.title} — Dialogue Manager export`,
       '',
       'Drop the `.dialogue` file into `content/dialogue/` of the Useless Tycoon project.',
-      'Entry cue: `start`. Requires StoryBridge (`get`, `flag`, `set_flag`, `effect`, `vars`) as an extra game state.'
+      'Entry cue: `start`. Requires StoryBridge (`state`, `flag`, `set_flag`, `effect`, `chance`, `scene`, `vars`, `stage`) as an extra game state.'
     ].join('\n');
   }
 
@@ -89,6 +113,69 @@ export class DialogueManagerCodeGenerator implements ICodeGenerator, IFormatVali
   /** Warnings collected during the last generateCode() call. */
   getWarnings(): string[] {
     return [...this.warnings];
+  }
+
+  private warn(message: string): void {
+    if (!this.warnings.includes(message)) this.warnings.push(message);
+  }
+
+  // --- stage ---
+
+  /** Order: clear -> background -> hide -> move -> show -> cg (StageController API on the game side). */
+  private emitStage(stage: NodeStage, nodeId: string, lines: string[]): void {
+    const m = this.manifest;
+    const call = (fn: string, ...args: Array<string | undefined>) => {
+      // Trailing unset args fall back to the GDScript defaults; inner ones become "".
+      while (args.length && !args[args.length - 1]) args.pop();
+      lines.push(`do stage.${fn}(${args.map((a) => JSON.stringify(a ?? '')).join(', ')})`);
+    };
+    if (stage.clear) call('clear');
+    if (stage.background) {
+      this.check(m?.backgrounds, stage.background.id, 'background', nodeId);
+      call('bg', stage.background.id, stage.background.transition);
+    }
+    for (const h of stage.hide || []) {
+      this.check(m?.slots, h.slot, 'slot', nodeId);
+      call('hide', h.slot, h.transition);
+    }
+    for (const mv of stage.move || []) {
+      this.check(m?.slots, mv.from, 'slot', nodeId);
+      this.check(m?.slots, mv.to, 'slot', nodeId);
+      call('move', mv.from, mv.to, mv.transition);
+    }
+    for (const sh of stage.show || []) {
+      this.check(m?.slots, sh.slot, 'slot', nodeId);
+      this.check(
+        m?.characters.map((c) => c.id),
+        sh.character,
+        'character',
+        nodeId
+      );
+      const character = m?.characters.find((c) => c.id === sh.character);
+      if (character && sh.expression) this.check(character.expressions, sh.expression, `expression of "${sh.character}"`, nodeId);
+      if (character && sh.outfit) this.check(character.outfits, sh.outfit, `outfit of "${sh.character}"`, nodeId);
+      call('show', sh.slot, sh.character, sh.expression, sh.outfit, sh.transition);
+    }
+    if (stage.cg === null) call('clear_cg');
+    else if (stage.cg) {
+      this.check(m?.cgs, stage.cg.id, 'cg', nodeId);
+      call('cg', stage.cg.id, stage.cg.transition);
+    }
+  }
+
+  private speakerName(id: string, nodeId: string): string {
+    this.check(
+      this.manifest?.characters.map((c) => c.id),
+      id,
+      'speaker',
+      nodeId
+    );
+    return this.manifest?.characters.find((c) => c.id === id)?.name || this.entities.find((e) => e.id === id)?.name || id;
+  }
+
+  /** Warns about an id missing from a manifest list; no manifest = no validation. */
+  private check(known: string[] | undefined, id: string, what: string, nodeId: string): void {
+    if (known && !known.includes(id)) this.warn(`Unknown ${what} "${id}" in node "${nodeId}" (not in game manifest)`);
   }
 
   // --- graph ---
@@ -134,7 +221,7 @@ export class DialogueManagerCodeGenerator implements ICodeGenerator, IFormatVali
       return;
     }
     if (choiceEdges.length !== edges.length) {
-      this.warnings.push(`Node "${edges[0].startNodeId}" mixes choices and direct links; direct links are ignored`);
+      this.warn(`Node "${edges[0].startNodeId}" mixes choices and direct links; direct links are ignored`);
     }
     for (const edge of choiceEdges) {
       const choice = this.nodes.get(edge.endNodeId) as ChoiceNode;
@@ -152,7 +239,7 @@ export class DialogueManagerCodeGenerator implements ICodeGenerator, IFormatVali
   private emitLinks(edges: Link[], indent: string, lines: string[]): void {
     const valid = edges.filter((e) => {
       if (this.nodes.get(e.endNodeId)?.type === 'narrative') return true;
-      this.warnings.push(`Link "${e.id}" to non-narrative node "${e.endNodeId}" is not supported; ignored`);
+      this.warn(`Link "${e.id}" to non-narrative node "${e.endNodeId}" is not supported; ignored`);
       return false;
     });
     const conditional: Array<[string, Link]> = [];
@@ -162,7 +249,7 @@ export class DialogueManagerCodeGenerator implements ICodeGenerator, IFormatVali
       if (cond) conditional.push([cond, e]);
       else plain.push(e);
     }
-    if (plain.length > 1) this.warnings.push(`Node "${plain[0].startNodeId}" has several unconditional links; only the first is used`);
+    if (plain.length > 1) this.warn(`Node "${plain[0].startNodeId}" has several unconditional links; only the first is used`);
     const fallback = plain[0] ? `=> ${this.names.get(plain[0].endNodeId)}` : '=> END';
 
     if (conditional.length === 0) {
@@ -178,20 +265,33 @@ export class DialogueManagerCodeGenerator implements ICodeGenerator, IFormatVali
   // --- variables ---
 
   private classify(variable: Variable): VarKind {
+    const m = this.manifest;
     for (const name of [variable.internalName, variable.name]) {
       if (!name) continue;
       const flag = /^flags\.(.+)$/.exec(name);
-      if (flag) return {kind: 'flag', key: flag[1]};
-      const module = name.split('.')[0];
-      if (name.includes('.') && GAME_MODULES.includes(module)) return {kind: 'game', key: name};
+      if (flag) {
+        if (m && !m.flags.includes(flag[1])) this.warn(`Unknown flag "${flag[1]}" (not in game manifest)`);
+        return {kind: 'flag', key: flag[1]};
+      }
+      if (m) {
+        const gk = m.game_keys.find((k) => k.key === name);
+        if (gk) return {kind: 'game', key: name, manifest: gk};
+      } else if (name.includes('.') && GAME_MODULES.includes(name.split('.')[0])) {
+        return {kind: 'game', key: name};
+      }
     }
-    return {kind: 'local', key: variable.internalName || variable.name};
+    const key = variable.internalName || variable.name;
+    if (m && GAME_MODULES.includes(key.split('.')[0])) this.warn(`Variable "${key}" looks like a game key but is not in the game manifest; exported as story-local`);
+    return {kind: 'local', key};
   }
 
   private read(variable: Variable): string {
     const v = this.classify(variable);
     // Unpublished game keys read as null, so always pass the initial value as default.
-    if (v.kind === 'game') return `state(${JSON.stringify(v.key)}, ${this.literal(variable.value, variable.type)})`;
+    if (v.kind === 'game') {
+      const initial = v.manifest ? this.literal(v.manifest.initial, mapManifestType(v.manifest.type, v.manifest.initial)) : this.literal(variable.value, variable.type);
+      return `state(${JSON.stringify(v.key)}, ${initial})`;
+    }
     if (v.kind === 'flag') return `flag(${JSON.stringify(v.key)})`;
     return `vars.get(${JSON.stringify(v.key)}, ${this.literal(variable.value, variable.type)})`;
   }
@@ -228,18 +328,22 @@ export class DialogueManagerCodeGenerator implements ICodeGenerator, IFormatVali
   private operationCode(op: VariableOperation): string | null {
     const variable = this.story.variables.find((v) => v.id === op.variableId);
     if (!variable) {
-      this.warnings.push(`Operation "${op.id}" references unknown variable "${op.variableId}"`);
+      this.warn(`Operation "${op.id}" references unknown variable "${op.variableId}"`);
       return null;
     }
     const v = this.classify(variable);
 
     if (v.kind === 'game') {
+      if (v.manifest && !v.manifest.writable) {
+        this.warn(`Game key "${v.key}" is read-only (writable=false in manifest); operation skipped`);
+        return null;
+      }
       const amount = op.target?.type === 'custom' ? Number(op.target.value) : NaN;
       if ((op.operationType === 'addition' || op.operationType === 'subtract') && !Number.isNaN(amount)) {
         const signed = op.operationType === 'subtract' ? -amount : amount;
         return `do effect({${JSON.stringify(v.key)}: ${this.float(signed)}})`;
       }
-      this.warnings.push(`Unsupported operation "${op.operationType}" on game key "${v.key}" (only addition/subtract of a number); skipped`);
+      this.warn(`Unsupported operation "${op.operationType}" on game key "${v.key}" (only addition/subtract of a number); skipped`);
       return null;
     }
 
@@ -248,7 +352,7 @@ export class DialogueManagerCodeGenerator implements ICodeGenerator, IFormatVali
       if (op.operationType === 'invert') return `do set_flag(${key}, not flag(${key}))`;
       const value = op.operationType === 'override' ? this.targetExpr(op.target, 'boolean') : null;
       if (value) return `do set_flag(${key}, ${value})`;
-      this.warnings.push(`Unsupported operation "${op.operationType}" on flag "${v.key}"; skipped`);
+      this.warn(`Unsupported operation "${op.operationType}" on flag "${v.key}"; skipped`);
       return null;
     }
 
@@ -256,7 +360,7 @@ export class DialogueManagerCodeGenerator implements ICodeGenerator, IFormatVali
     if (op.operationType === 'invert') return `set ${ref} = not ${this.read(variable)}`;
     const value = this.targetExpr(op.target, variable.type);
     if (value === null) {
-      this.warnings.push(`Operation "${op.id}" on "${v.key}" has no target; skipped`);
+      this.warn(`Operation "${op.id}" on "${v.key}" has no target; skipped`);
       return null;
     }
     if (op.operationType === 'override') return `set ${ref} = ${value}`;

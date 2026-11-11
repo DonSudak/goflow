@@ -22,6 +22,7 @@
     "check:all": "npm run format && npm run lint:fix",
     "typecheck": "tsc --noEmit",
     "test": "jest",
+    "export:dialogue": "tsx scripts/export-dialogue.ts",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:engine": "jest \"src/tests/(unit|integration)/.*\\.(ts|tsx)$\" --verbose"
@@ -112,6 +113,7 @@
     "stylelint-config-standard-scss": "^14.0.0",
     "tailwindcss": "^4",
     "ts-jest": "^29.3.3",
+    "tsx": "^4.20.6",
     "typescript": "^5.8.2"
   }
 }

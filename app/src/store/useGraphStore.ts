@@ -1,6 +1,6 @@
 import {ProjectDataService} from '@services/projectDataService';
 import {Entity, EntityType} from '@types-folder/entities';
-import type {ChoiceNode, Layer, LayerNode, Link, NarrativeNode, NoteNode, SkeletonNode} from '@types-folder/nodes';
+import type {ChoiceNode, Layer, LayerNode, Link, NarrativeNode, NodeStage, NoteNode, SkeletonNode} from '@types-folder/nodes';
 import {Connection, EdgeChange, NodeChange, Viewport} from '@xyflow/react';
 import {produce} from 'immer';
 import {nanoid} from 'nanoid';
@@ -77,7 +77,7 @@ export interface GraphStore {
 
   updateLayerName: (layerId: string, name: string) => void;
   updateLayerDescription: (layerId: string, description: string) => void;
-  updateNodeData: (id: string, data: {text?: string; title?: string; attachedEntities?: string[]}) => void;
+  updateNodeData: (id: string, data: {text?: string; title?: string; attachedEntities?: string[]; stage?: NodeStage}) => void;
   addNode: (node: ChoiceNode | NarrativeNode | NoteNode) => void;
   addLayer: (node: LayerNode) => void;
   removeNode: (nodeId: string, skipOperationGeneration?: boolean) => void;
@@ -294,6 +294,8 @@ export const useGraphStore = create<GraphStore>()(
                     return {
                       ...startNode,
                       data: {
+                        ...startNode.data,
+                        ...updatedNode.data,
                         title: 'title' in updatedNode.data ? updatedNode.data.title : '',
                         text: updatedNode.data.text
                       }
@@ -322,6 +324,8 @@ export const useGraphStore = create<GraphStore>()(
                     return {
                       ...endNode,
                       data: {
+                        ...endNode.data,
+                        ...updatedNode.data,
                         title: 'title' in updatedNode.data ? updatedNode.data.title : '',
                         text: updatedNode.data.text
                       }
