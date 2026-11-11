@@ -1,13 +1,10 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Local desktop editor: full file access to the projects and Godot dirs the user picks",
+  "description": "Webview gets fs access to $APPDATA only; user folders are added at runtime by Rust (native dialog / CLI). Godot paths live in a Rust-only file.",
   "windows": ["main"],
   "permissions": [
     "core:default",
-    "dialog:default",
-    "store:default",
-    "fs:default",
     "fs:allow-read-text-file",
     "fs:allow-write-text-file",
     "fs:allow-read-file",
@@ -15,9 +12,12 @@
     "fs:allow-read-dir",
     "fs:allow-mkdir",
     "fs:allow-remove",
-    "fs:allow-rename",
     "fs:allow-stat",
     "fs:allow-exists",
-    {"identifier": "fs:scope", "allow": [{"path": "**"}, {"path": "**/.*"}]}
+    {
+      "identifier": "fs:scope",
+      "allow": [{"path": "$APPDATA/**"}],
+      "deny": [{"path": "$APPCONFIG/godot-paths.json"}]
+    }
   ]
 }

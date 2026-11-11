@@ -11,13 +11,42 @@
     "beforeBuildCommand": "npm run build:local-static"
   },
   "app": {
-    "windows": [{"label": "main", "title": "Go Flow — Useless Tycoon", "width": 1440, "height": 900, "dragDropEnabled": false}],
-    "security": {"csp": null}
+    "windows": [
+      {
+        "label": "main",
+        "title": "Go Flow — Useless Tycoon",
+        "width": 1440,
+        "height": 900,
+        "dragDropEnabled": false
+      }
+    ],
+    "security": {
+      "csp": {
+        "default-src": "'self'",
+        "script-src": "'self'",
+        "img-src": "'self' asset: blob: data:",
+        "style-src": "'self' 'unsafe-inline'",
+        "font-src": "'self' data:",
+        "connect-src": "'self' ipc: http://ipc.localhost data: blob:"
+      },
+      "dangerousDisableAssetCspModification": [
+        "style-src"
+      ]
+    }
   },
   "bundle": {
     "active": true,
-    "targets": ["appimage", "deb"],
+    "targets": [
+      "appimage",
+      "deb"
+    ],
     "category": "Development",
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"]
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
   }
 }

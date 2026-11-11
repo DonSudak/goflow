@@ -1,4 +1,3 @@
-import {parseCliArgs, resolveSettings} from '../../godot/settings';
 import {createProjectDocument} from '../localApi';
 import {ExternalChangeError, FsLike, TauriFsProjectStore, slugify, stableStringify} from '../tauriFsProjectStore';
 
@@ -135,17 +134,5 @@ describe('TauriFsProjectStore', () => {
   it('test_slugify_handles_cyrillic_and_symbols', () => {
     expect(slugify('Бар: ночь №1')).toBe('бар-ночь-1');
     expect(slugify('!!!')).toBe('project');
-  });
-});
-
-describe('godot settings', () => {
-  it('test_cli_args_override_and_defaults_derive_from_godot_project', () => {
-    const cli = parseCliArgs(['--godot-project', '/games/ut/', '--project-dir=/tmp/n']);
-    expect(cli).toEqual({godotProject: '/games/ut/', projectsDir: '/tmp/n'});
-
-    const s = resolveSettings({projectsDir: '/stored', godotExe: '/bin/godot4'}, cli, '/data');
-    expect(s).toMatchObject({godotProject: '/games/ut', projectsDir: '/tmp/n', dialogueDir: '/games/ut/content/dialogue', godotExe: '/bin/godot4'});
-    expect(resolveSettings({godotProject: '/g'}, {}, '/data').projectsDir).toBe('/g/narrative');
-    expect(resolveSettings({}, {}, '/data').projectsDir).toBe('/data/projects');
   });
 });

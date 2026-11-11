@@ -2,43 +2,40 @@
 
 import React, {useEffect, useState} from 'react';
 
-import {GodotSettings, getSettings, loadStoredSettings, saveSettings} from '@services/godot/settings';
+import {GodotPathKind, GodotSettings, getSettings, pickGodotPath, resetGodotPath, setAutoExport} from '@services/godot/settings';
 
 import s from './page.module.css';
 
-type Field = {key: 'godotProject' | 'projectsDir' | 'dialogueDir' | 'godotExe'; label: string; hint: string; directory: boolean};
-
-const FIELDS: Field[] = [
-  {key: 'godotProject', label: 'Godot project', hint: 'Folder with project.godot', directory: true},
-  {key: 'projectsDir', label: 'Narrative projects folder', hint: 'Default: <Godot project>/narrative', directory: true},
-  {key: 'dialogueDir', label: 'Dialogue output folder', hint: 'Default: <Godot project>/content/dialogue', directory: true},
-  {key: 'godotExe', label: 'Godot executable', hint: 'Used by "Play in Godot"', directory: false}
+const FIELDS: Array<{key: GodotPathKind; label: string; hint: string}> = [
+  {key: 'godotProject', label: 'Godot project', hint: 'Folder with project.godot'},
+  {key: 'projectsDir', label: 'Narrative projects folder', hint: 'Default: <Godot project>/narrative'},
+  {key: 'dialogueDir', label: 'Dialogue output folder', hint: 'Default: <Godot project>/content/dialogue'},
+  {key: 'godotExe', label: 'Godot executable', hint: 'Used by "Play in Godot" (file name must contain "godot")'}
 ];
 
-/** Desktop-only settings: where the Godot project, narrative projects and dialogue exports live. */
+/** Desktop-only settings. Paths are picked in native dialogs opened by the Rust side. */
 const GodotSettingsSection: React.FC = () => {
-  const [stored, setStored] = useState<Partial<GodotSettings>>({});
-  const [effective, setEffective] = useState<GodotSettings | null>(null);
-  const [saved, setSaved] = useState(false);
+  const [settings, setSettings] = useState<GodotSettings | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadStoredSettings().then(setStored);
-    getSettings().then(setEffective);
+    getSettings()
+      .then(setSettings)
+      .catch((e) => setError(String(e)));
   }, []);
 
-  const browse = async (field: Field) => {
-    const {open} = await import('@tauri-apps/plugin-dialog');
-    const picked = await open({directory: field.directory, multiple: false, defaultPath: stored[field.key] || effective?.[field.key] || undefined});
-    if (typeof picked === 'string') setStored((prev) => ({...prev, [field.key]: picked}));
-  };
-
-  const save = async () => {
-    const projectsDirChanged = (stored.projectsDir || '') !== (effective?.projectsDir || '');
-    await saveSettings(stored);
-    setEffective(await getSettings());
-    setSaved(true);
-    // the projects folder is read once per session by the project store
-    if (projectsDirChanged || stored.godotProject !== effective?.godotProject) window.location.reload();
+  const run = async (action: () => Promise<GodotSettings | null>, key?: GodotPathKind) => {
+    setError(null);
+    try {
+      const before = settings;
+      const next = await action();
+      if (!next) return;
+      setSettings(next);
+      // the project store reads the projects folder once per session
+      if (key && key !== 'godotExe' && key !== 'dialogueDir' && next.projectsDir !== before?.projectsDir) window.location.reload();
+    } catch (e) {
+      setError(String(e));
+    }
   };
 
   return (
@@ -51,44 +48,27 @@ const GodotSettingsSection: React.FC = () => {
       <div className={s.settingsCard}>
         {FIELDS.map((field) => (
           <div className={s.fieldGroup} key={field.key}>
-            <label className={s.fieldLabel} htmlFor={`godot-${field.key}`}>
-              {field.label}
-            </label>
-            <div style={{display: 'flex', gap: 8}}>
-              <input
-                id={`godot-${field.key}`}
-                type='text'
-                className={s.fieldInput}
-                style={{flex: 1}}
-                value={stored[field.key] || ''}
-                placeholder={effective?.[field.key] || ''}
-                onChange={(e) => setStored((prev) => ({...prev, [field.key]: e.target.value}))}
-              />
-              <button type='button' className={s.saveButton} onClick={() => browse(field)}>
-                Browse…
+            <label className={s.fieldLabel}>{field.label}</label>
+            <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
+              <code style={{flex: 1, overflowWrap: 'anywhere'}}>{settings?.[field.key] || '—'}</code>
+              <button type='button' className={s.saveButton} onClick={() => run(() => pickGodotPath(field.key), field.key)}>
+                Choose…
+              </button>
+              <button type='button' className={s.saveButton} onClick={() => run(() => resetGodotPath(field.key), field.key)}>
+                Reset
               </button>
             </div>
-            <p className={s.fieldDescription}>
-              {field.hint}
-              {effective?.[field.key] ? ` · in use: ${effective[field.key]}` : ''}
-            </p>
+            <p className={s.fieldDescription}>{field.hint}</p>
           </div>
         ))}
 
         <div className={s.fieldGroup}>
           <label className={s.fieldLabel}>
-            <input type='checkbox' checked={!!stored.autoExport} onChange={(e) => setStored((prev) => ({...prev, autoExport: e.target.checked}))} /> Auto-export .dialogue on save
+            <input type='checkbox' checked={!!settings?.autoExport} onChange={(e) => run(() => setAutoExport(e.target.checked))} /> Auto-export .dialogue on save
           </label>
-          <p className={s.fieldDescription}>
-            Writes &lt;dialogue folder&gt;/&lt;project folder&gt;.dialogue shortly after each edit. CLI args --project-dir / --godot-project override these settings.
-          </p>
+          <p className={s.fieldDescription}>Game manifest: {settings?.manifestPath || '—'}. CLI args --project-dir / --godot-project override the folders.</p>
         </div>
-
-        <div className={s.cardActions}>
-          <button type='button' className={s.saveButton} onClick={save}>
-            {saved ? 'Saved' : 'Save'}
-          </button>
-        </div>
+        {error && <p style={{color: 'var(--red-11)'}}>{error}</p>}
       </div>
     </div>
   );

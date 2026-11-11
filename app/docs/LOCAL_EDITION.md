@@ -85,19 +85,27 @@ npm run tauri:build   # src-tauri/target/release/goflow-ut + bundle/{appimage,de
 goflow-ut --godot-project ~/games/useless-tycoon [--project-dir <dir>]
 ```
 
-- `src-tauri/`: plugins fs, dialog, store; Rust commands `cli_args` and `launch_godot(exe, args)`.
+- `src-tauri/`: plugins fs and dialog. The webview never passes a program, argv or arbitrary path to Rust:
+  folders (Godot project, projects dir, dialogue dir) and the Godot executable are chosen in native dialogs
+  opened by Rust (`pick_godot_path`) or come from CLI args, are validated (project.godot present; executable
+  file named `*godot*`) and persisted in `<app config>/godot-paths.json` (denied to the webview fs scope).
+  `play_in_godot(project, dialogue_res, cue)` validates `res://<path>.dialogue` / `[A-Za-z0-9_]+` and builds the argv.
+- fs scope: statically only `$APPDATA/**`; the chosen projects/dialogue folders and the game manifest are added
+  at runtime (`fs_scope().allow_directory`) on startup and after each pick. CSP: `default-src 'self'`
+  (see `tauri.conf.json`; style-src keeps `'unsafe-inline'` for React inline styles).
 - Under Tauri `getProjectStore()` returns `TauriFsProjectStore` (`src/services/local/tauriFsProjectStore.ts`):
   `<projectsDir>/<slug>/project.json` (2-space indent, keys sorted recursively, trailing newline) and
   `<slug>/images/<entityId>__<parameterId>.<ext>`. The slug comes from the project name once; renames keep the folder.
 - External changes (git pull, branch switch): every read compares the file mtime with the one this session
   last read/wrote; on window focus all known projects are re-checked. A newer file on disk is never
   overwritten: a toast is shown and the window reloads from disk.
-- Settings → **Godot** (`src/services/godot/settings.ts`, stored in `<appData>/settings.json`): Godot project,
+- Settings → **Godot** (`src/services/godot/settings.ts` → Rust commands): Godot project,
   projects dir (default `<godot>/narrative`), dialogue dir (default `<godot>/content/dialogue`), Godot executable,
-  auto-export toggle. `--godot-project` / `--project-dir` CLI args override.
+  auto-export toggle. `--godot-project` / `--project-dir` CLI args override. The game manifest is always
+  `<godot>/narrative/game_manifest.json`.
 - Export modal → Dialogue Manager → **Write to Godot project**, and auto-export: `exporters/projectDocument.ts`
   on the saved project document (same code as `scripts/export-dialogue.ts`, so output is byte-identical;
-  `<projectsDir>/game_manifest.json` is used when present — pass the same file to the CLI with `--manifest`).
+  `<godot>/narrative/game_manifest.json` is used when present — pass the same file to the CLI with `--manifest`).
 - **Play in Godot** (node context menu, play bar): exports, then runs
   `<godot> --path <godot project> -- --dialogue res://content/dialogue/<file>.dialogue --cue <cue>`;
   the cue comes from `DialogueManagerCodeGenerator.cueNames()`.

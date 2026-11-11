@@ -1,7 +1,7 @@
 /**
- * Desktop (Tauri) settings of the local edition: where the Godot project, the narrative
- * projects and the exported dialogue live. Persisted with @tauri-apps/plugin-store;
- * `--project-dir` / `--godot-project` CLI args (passed by the Godot editor plugin) override.
+ * Desktop (Tauri) settings of the local edition. Owned by Rust (src-tauri/src/lib.rs):
+ * folders and the Godot executable are chosen in native dialogs opened by Rust and persisted in a
+ * file the webview cannot write; `--godot-project` / `--project-dir` CLI args override.
  */
 
 export const isTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -13,58 +13,35 @@ export interface GodotSettings {
   projectsDir: string;
   /** Dialogue output folder; default `<godotProject>/content/dialogue` */
   dialogueDir: string;
-  /** Godot editor/engine executable */
+  /** `<godotProject>/narrative/game_manifest.json` (written by the game) */
+  manifestPath: string;
+  /** Godot executable chosen in Settings */
   godotExe: string;
-  /** Write `<dialogueDir>/<slug>.dialogue` after every save */
+  /** Write the `.dialogue` files after every save */
   autoExport: boolean;
 }
 
-const KEY = 'godot';
-const DEFAULTS: GodotSettings = {godotProject: '', projectsDir: '', dialogueDir: '', godotExe: 'godot', autoExport: false};
+export type GodotPathKind = 'godotProject' | 'projectsDir' | 'dialogueDir' | 'godotExe';
 
-/** Parses `--flag value` and `--flag=value` forms. */
-export const parseCliArgs = (args: string[]): Partial<Pick<GodotSettings, 'projectsDir' | 'godotProject'>> => {
-  const out: Record<string, string> = {};
-  const names: Record<string, keyof GodotSettings> = {'--project-dir': 'projectsDir', '--godot-project': 'godotProject'};
-  args.forEach((arg, i) => {
-    const eq = arg.indexOf('=');
-    const flag = eq < 0 ? arg : arg.slice(0, eq);
-    const inline = eq < 0 ? undefined : arg.slice(eq + 1);
-    if (names[flag]) out[names[flag]] = inline ?? args[i + 1] ?? '';
-  });
-  return out;
-};
-
-/** Fills derived defaults: projectsDir and dialogueDir from the Godot project. */
-export const resolveSettings = (stored: Partial<GodotSettings>, cli: Partial<GodotSettings>, appDataDir: string): GodotSettings => {
-  const s = {...DEFAULTS, ...stored, ...Object.fromEntries(Object.entries(cli).filter(([, v]) => v))};
-  const godot = s.godotProject.replace(/\/+$/, '');
-  return {
-    ...s,
-    godotProject: godot,
-    projectsDir: s.projectsDir || (godot ? `${godot}/narrative` : `${appDataDir}/projects`),
-    dialogueDir: s.dialogueDir || (godot ? `${godot}/content/dialogue` : '')
-  };
-};
+const invoke = async <T>(cmd: string, args?: Record<string, unknown>) => (await import('@tauri-apps/api/core')).invoke<T>(cmd, args);
 
 let cached: Promise<GodotSettings> | null = null;
 
-const store = async () => (await import('@tauri-apps/plugin-store')).load('settings.json', {autoSave: true, defaults: {}});
+/** Effective settings (stored + CLI overrides + derived defaults). */
+export const getSettings = (): Promise<GodotSettings> => (cached ??= invoke<GodotSettings>('get_godot_settings'));
 
-/** Stored values only (what the settings form edits). */
-export const loadStoredSettings = async (): Promise<Partial<GodotSettings>> => ((await (await store()).get<Partial<GodotSettings>>(KEY)) as Partial<GodotSettings>) || {};
-
-/** Effective settings: stored + CLI overrides + defaults. */
-export const getSettings = (): Promise<GodotSettings> =>
-  (cached ??= (async () => {
-    const [{invoke}, {appDataDir}] = await Promise.all([import('@tauri-apps/api/core'), import('@tauri-apps/api/path')]);
-    const [stored, args, dataDir] = await Promise.all([loadStoredSettings(), invoke<string[]>('cli_args'), appDataDir()]);
-    return resolveSettings(stored, parseCliArgs(args), dataDir.replace(/\/+$/, ''));
-  })());
-
-export const saveSettings = async (settings: Partial<GodotSettings>) => {
-  const s = await store();
-  await s.set(KEY, settings);
-  await s.save();
-  cached = null;
+const update = async (p: Promise<GodotSettings | null>) => {
+  const settings = await p;
+  if (settings) cached = Promise.resolve(settings);
+  return settings;
 };
+
+/** Native dialog (opened by Rust); null when cancelled. Throws when the choice is invalid. */
+export const pickGodotPath = (kind: GodotPathKind) => update(invoke<GodotSettings | null>('pick_godot_path', {kind}));
+
+export const resetGodotPath = (kind: GodotPathKind) => update(invoke<GodotSettings>('reset_godot_path', {kind}));
+
+export const setAutoExport = (enabled: boolean) => update(invoke<GodotSettings>('set_auto_export', {enabled}));
+
+/** `--path <project> -- --dialogue <res> --cue <cue>` with the executable from Settings (argv built and validated in Rust). */
+export const launchGodot = (project: string, dialogueRes: string, cue: string) => invoke<number>('play_in_godot', {project, dialogueRes, cue});

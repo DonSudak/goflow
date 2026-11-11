@@ -15,13 +15,13 @@ import {useGraphStore} from '@store/useGraphStore';
 import {prepareDataForHTML} from '../../utils/flattenLayers';
 import {getProjectStore} from '../local/projectStore';
 import {TauriFsProjectStore} from '../local/tauriFsProjectStore';
-import {getSettings} from './settings';
+import {getSettings, launchGodot} from './settings';
 
-/** `<projectsDir>/game_manifest.json` (written by the Godot side); same file the CLI gets via --manifest. */
-const loadManifest = async (projectsDir: string): Promise<GameManifest | undefined> => {
+/** `<godot>/narrative/game_manifest.json` (written by the game); pass the same file to the CLI via --manifest. */
+export const loadManifest = async (manifestPath: string): Promise<GameManifest | undefined> => {
+  if (!manifestPath) return undefined;
   const fs = await import('@tauri-apps/plugin-fs');
-  const path = `${projectsDir}/game_manifest.json`;
-  return (await fs.exists(path)) ? parseGameManifest(JSON.parse(await fs.readTextFile(path))) : undefined;
+  return (await fs.exists(manifestPath)) ? parseGameManifest(JSON.parse(await fs.readTextFile(manifestPath))) : undefined;
 };
 
 /** `res://` path of a file inside the Godot project. */
@@ -35,7 +35,7 @@ export const writeDialogueToGodot = async (projectId: string, flush = true) => {
   if (flush) await useGraphStore.getState().saveToDb(); // flush the editor into the project document
 
   const store = getProjectStore() as TauriFsProjectStore;
-  const [raw, slug, manifest, fs] = await Promise.all([store.get(projectId), store.getSlug(projectId), loadManifest(settings.projectsDir), import('@tauri-apps/plugin-fs')]);
+  const [raw, slug, manifest, fs] = await Promise.all([store.get(projectId), store.getSlug(projectId), loadManifest(settings.manifestPath), import('@tauri-apps/plugin-fs')]);
   if (!raw || !slug) throw new Error(`Project ${projectId} has no folder on disk`);
 
   const doc = parseProjectDocument(raw);
@@ -67,10 +67,9 @@ export const playInGodot = async (projectId: string, nodeId?: string) => {
     const story = new StoryProcessor().flattenLayers({title: doc.name, data: {nodes, edges, variables: timeline.variables}} as any);
     cue = new DialogueManagerCodeGenerator().cueNames(story).get(nodeId) || 'start';
   }
-  const args = ['--path', settings.godotProject, '--', '--dialogue', toResPath(settings.godotProject, paths[index]), '--cue', cue];
-  const {invoke} = await import('@tauri-apps/api/core');
-  await invoke('launch_godot', {exe: settings.godotExe || 'godot', args});
-  return {cue, args};
+  const dialogueRes = toResPath(settings.godotProject, paths[index]);
+  await launchGodot(settings.godotProject, dialogueRes, cue);
+  return {cue, dialogueRes};
 };
 
 let autoExportTimer: ReturnType<typeof setTimeout> | undefined;
