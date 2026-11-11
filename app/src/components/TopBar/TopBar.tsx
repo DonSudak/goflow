@@ -12,6 +12,7 @@ import {trackProjectNameEditing} from '@services/analytics';
 import {api} from '@services/api';
 import cls from 'classnames';
 import {useTranslation} from 'react-i18next';
+import {isLocal} from 'src/utils/edition';
 
 import {useGraphStore} from '@store/useGraphStore';
 import {useNotebookStore} from '@store/useNotebookStore';
@@ -142,19 +143,21 @@ const TopBar = () => {
               <MagnifyingGlassIcon className={s.icon} />
             </IconButton>
           </Tooltip>
-          {/* Кнопка блокнота */}
-          <Tooltip
-            content={
-              <>
-                {t('notebook.title', 'Notebook')}
-                <kbd className={s.kbd_style}>{getHotkeyWithModifier('N')}</kbd>
-              </>
-            }
-          >
-            <IconButton className={cls(s.icon_button)} size='2' color='gray' variant='ghost' style={{margin: 0}} onClick={toggleNotebookPanel}>
-              <FileTextIcon className={s.icon} />
-            </IconButton>
-          </Tooltip>
+          {/* Кнопка блокнота (нет в local edition) */}
+          {!isLocal() && (
+            <Tooltip
+              content={
+                <>
+                  {t('notebook.title', 'Notebook')}
+                  <kbd className={s.kbd_style}>{getHotkeyWithModifier('N')}</kbd>
+                </>
+              }
+            >
+              <IconButton className={cls(s.icon_button)} size='2' color='gray' variant='ghost' style={{margin: 0}} onClick={toggleNotebookPanel}>
+                <FileTextIcon className={s.icon} />
+              </IconButton>
+            </Tooltip>
+          )}
           <IconButton size='2' variant='ghost' color='gray' style={{margin: 0}} onClick={toggleSidebar}>
             <svg xmlns='http://www.w3.org/2000/svg' width='16' height='12' viewBox='0 0 16 12' fill='none' className={s.icon}>
               <rect x='0.5' y='0.5' width='15' height='11' rx='1.5' stroke='var(--gray-12)' />

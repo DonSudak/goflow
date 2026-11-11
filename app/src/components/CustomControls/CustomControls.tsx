@@ -10,6 +10,7 @@ import DOMPurify from 'dompurify';
 import {marked} from 'marked';
 import {useTranslation} from 'react-i18next';
 import {trackAboutClose, trackAboutOpen} from 'src/services/analytics';
+import {isLocal} from 'src/utils/edition';
 
 import {useGraphStore} from '@store/useGraphStore';
 
@@ -244,18 +245,21 @@ const ZoomControlsWithPercentage = () => {
               </ControlButton>
             </Tooltip>
 
-            <Tooltip content={t('controls.feedback', 'Send Feedback')}>
-              <ControlButton
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowFeedback(true);
-                }}
-                className={`${s.control_btn} nodrag`}
-                style={{borderBottom: 'none', marginLeft: '8px'}}
-              >
-                <ChatBubbleIcon className={s.control_icon} color='black' />
-              </ControlButton>
-            </Tooltip>
+            {/* Feedback goes to the Go Flow backend: not in the local edition */}
+            {!isLocal() && (
+              <Tooltip content={t('controls.feedback', 'Send Feedback')}>
+                <ControlButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowFeedback(true);
+                  }}
+                  className={`${s.control_btn} nodrag`}
+                  style={{borderBottom: 'none', marginLeft: '8px'}}
+                >
+                  <ChatBubbleIcon className={s.control_icon} color='black' />
+                </ControlButton>
+              </Tooltip>
+            )}
 
             <ControlButton
               onClick={(e) => {

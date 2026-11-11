@@ -8,6 +8,7 @@ import {ProjectDataService} from '@services/projectDataService';
 import cls from 'classnames';
 import {SparklesIcon} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
+import {isAIEnabled} from 'src/utils/edition';
 
 import {useGraphStore} from '@store/useGraphStore';
 
@@ -37,7 +38,7 @@ interface AIFillButtonProps {
 /**
  * Компактная кнопка AI Fill для нарративных узлов
  */
-export const AIFillButton: React.FC<AIFillButtonProps> = ({nodeId, hasText, onFill, isLoading = false}) => {
+const AIFillButtonImpl: React.FC<AIFillButtonProps> = ({nodeId, hasText, onFill, isLoading = false}) => {
   const {t} = useTranslation();
   const [isProcessing, setIsProcessing] = useState(false);
   const {getFormattedPrice} = usePipelinePricing();
@@ -117,3 +118,6 @@ export const AIFillButton: React.FC<AIFillButtonProps> = ({nodeId, hasText, onFi
     </>
   );
 };
+
+/** No AI in the local edition */
+export const AIFillButton: React.FC<AIFillButtonProps> = (props) => (isAIEnabled() ? <AIFillButtonImpl {...props} /> : null);

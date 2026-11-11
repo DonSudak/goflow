@@ -6,6 +6,7 @@ import {usePipelinePricing} from '@hooks/usePipelinePricing';
 import {LightningBoltIcon} from '@radix-ui/react-icons';
 import {Button} from '@radix-ui/themes';
 import {useTranslation} from 'react-i18next';
+import {isAIEnabled} from 'src/utils/edition';
 
 import AILoadingAnimation from '@components/common/AILoadingAnimation';
 
@@ -15,7 +16,7 @@ interface ComprehensiveBibleGenerationButtonProps {
   onClick: () => void;
 }
 
-export const ComprehensiveBibleGenerationButton: React.FC<ComprehensiveBibleGenerationButtonProps> = ({isLoading, isActiveField, onClick}) => {
+const ComprehensiveBibleGenerationButtonImpl: React.FC<ComprehensiveBibleGenerationButtonProps> = ({isLoading, isActiveField, onClick}) => {
   const {t} = useTranslation();
   const {getFormattedPrice} = usePipelinePricing();
   const pipelinePrice = getFormattedPrice('bible-generation-v2');
@@ -51,3 +52,6 @@ export const ComprehensiveBibleGenerationButton: React.FC<ComprehensiveBibleGene
     </Button>
   );
 };
+
+/** No AI in the local edition */
+export const ComprehensiveBibleGenerationButton: React.FC<ComprehensiveBibleGenerationButtonProps> = (props) => (isAIEnabled() ? <ComprehensiveBibleGenerationButtonImpl {...props} /> : null);

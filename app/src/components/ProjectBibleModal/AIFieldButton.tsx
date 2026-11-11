@@ -5,6 +5,7 @@ import {useTeamAIAccess} from '@hooks/useTeamAIAccess';
 import {CheckIcon, Cross1Icon, GearIcon, LightningBoltIcon, MagicWandIcon} from '@radix-ui/react-icons';
 import {Button, Flex, Tooltip} from '@radix-ui/themes';
 import {useTranslation} from 'react-i18next';
+import {isAIEnabled} from 'src/utils/edition';
 
 import {NoAIAccessModal} from '@components/common/NoAIAccessModal';
 
@@ -21,7 +22,7 @@ interface AIFieldButtonProps {
   showPipelineModal?: boolean;
 }
 
-const AIFieldButton: React.FC<AIFieldButtonProps> = ({
+const AIFieldButtonImpl: React.FC<AIFieldButtonProps> = ({
   fieldType,
   isLoading,
   isPending,
@@ -166,5 +167,8 @@ const AIFieldButton: React.FC<AIFieldButtonProps> = ({
     </>
   );
 };
+
+/** No AI in the local edition */
+const AIFieldButton: React.FC<AIFieldButtonProps> = (props) => (isAIEnabled() ? <AIFieldButtonImpl {...props} /> : null);
 
 export default AIFieldButton;

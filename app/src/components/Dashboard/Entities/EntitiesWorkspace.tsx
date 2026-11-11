@@ -10,6 +10,7 @@ import {Button} from '@radix-ui/themes';
 import {api} from '@services/api';
 import {EntitiesQueryParams, Entity, EntityParameter, EntityType, getEntityTypeDisplay} from '@types-folder/entities';
 import {useTranslation} from 'react-i18next';
+import {isAIEnabled} from 'src/utils/edition';
 
 import {NoAIAccessModal} from '@components/common/NoAIAccessModal';
 
@@ -513,10 +514,12 @@ export const EntitiesWorkspace: React.FC<EntitiesWorkspaceProps> = ({projectId, 
           <div className={s.actions}>
             {viewMode === 'list' && (
               <>
-                <Button variant='soft' color='violet' size='3' onClick={handleAICreateEntity} disabled={isLoading}>
-                  <MagicWandIcon className={s.buttonIcon} />
-                  {t('dashboard.entities.create_with_ai', 'Создать с ИИ')}
-                </Button>
+                {isAIEnabled() && (
+                  <Button variant='soft' color='violet' size='3' onClick={handleAICreateEntity} disabled={isLoading}>
+                    <MagicWandIcon className={s.buttonIcon} />
+                    {t('dashboard.entities.create_with_ai', 'Создать с ИИ')}
+                  </Button>
+                )}
                 <Button variant='soft' size='3' onClick={handleCreateEntity}>
                   <PlusIcon className={s.buttonIcon} />
                   {t('dashboard.entities.create', 'Создать')}

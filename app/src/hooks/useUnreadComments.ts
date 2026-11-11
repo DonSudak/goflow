@@ -3,6 +3,7 @@ import {useCallback, useEffect, useState} from 'react';
 import {CommentsAPI} from '@services/comments.api';
 
 import {ThreadContextType, UnreadCommentsFilters} from '../types/comments';
+import {isOSS} from '../utils/edition';
 import {useUnreadCommentsUpdates} from './useCommentsEvents';
 import {useCurrentProject} from './useCurrentProject';
 
@@ -36,7 +37,8 @@ export const useUnreadComments = ({filters = {}, autoRefresh = true, refreshInte
 
   // Загрузка количества непрочитанных комментариев
   const fetchUnreadCount = useCallback(async () => {
-    if (stableFilters.projectIds.length === 0) {
+    // Comments are cloud-only
+    if (isOSS() || stableFilters.projectIds.length === 0) {
       setUnreadCount(0);
       return;
     }

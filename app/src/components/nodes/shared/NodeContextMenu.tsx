@@ -6,6 +6,7 @@ import {useTeamAIAccess} from '@hooks/useTeamAIAccess';
 import {MagicWandIcon, PlayIcon, TrashIcon} from '@radix-ui/react-icons';
 import {Node} from '@xyflow/react';
 import {useTranslation} from 'react-i18next';
+import {isAIEnabled} from 'src/utils/edition';
 
 import {NoAIAccessModal} from '@components/common/NoAIAccessModal';
 
@@ -143,7 +144,7 @@ const NodeContextMenu: React.FC<NodeContextMenuProps> = ({isOpen, position, node
   const menuItems = [];
 
   // AI действия для нарративных узлов
-  if (node.type === 'narrative') {
+  if (node.type === 'narrative' && isAIEnabled()) {
     if (onFillAction) {
       const isDisabledDueToAIAccess = isTeamPlan && !hasAIAccess;
       menuItems.push({
@@ -163,7 +164,7 @@ const NodeContextMenu: React.FC<NodeContextMenuProps> = ({isOpen, position, node
   }
 
   // AI действие для узлов выбора (choice)
-  if (node.type === 'choice') {
+  if (node.type === 'choice' && isAIEnabled()) {
     const isEmpty = isContentEmpty(node.data);
     const aiLabel = isEmpty ? t('node_context_menu.fill', 'Заполнить') : t('node_context_menu.rephrase', 'Перефразировать');
     const isDisabledDueToAIAccess = isTeamPlan && !hasAIAccess;
