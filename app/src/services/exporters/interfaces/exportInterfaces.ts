@@ -17,7 +17,8 @@ export enum ExportFormat {
   DIALOGIC = 'dialogic',
   TWINE = 'twine',
   INK = 'ink',
-  YARN = 'yarn'
+  YARN = 'yarn',
+  DIALOGUE_MANAGER = 'dialogue_manager'
 }
 
 /**

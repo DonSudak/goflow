@@ -88,6 +88,11 @@ const ExportModal = ({open, onOpenChange}: ExportModalProps) => {
       description: t('export_modal.formats.dialogic.description')
     },
     {
+      id: 'dialogue_manager',
+      label: t('export_modal.formats.dialogue_manager.label'),
+      description: t('export_modal.formats.dialogue_manager.description')
+    },
+    {
       id: 'unity',
       label: t('export_modal.formats.unity.label'),
       description: t('export_modal.formats.unity.description'),
@@ -445,7 +450,9 @@ This export contains your project data in a structured format.
     }
   };
 
-  const exportToDialogic = async () => {
+  // Dialogic and Dialogue Manager share the same ExportService flow
+  const exportToDialogic = async (format: ExportFormat.DIALOGIC | ExportFormat.DIALOGUE_MANAGER = ExportFormat.DIALOGIC) => {
+    const isDialogic = format === ExportFormat.DIALOGIC;
     try {
       // Принудительно сохраняем актуальные данные перед экспортом
       await useGraphStore.getState().saveToDb();
@@ -470,9 +477,9 @@ This export contains your project data in a structured format.
       };
 
       const exportService = ExportServiceFactory.create();
-      const config = exportService.getDefaultConfig(ExportFormat.DIALOGIC);
+      const config = exportService.getDefaultConfig(format);
       config.includeComments = true;
-      config.generateReadme = true;
+      config.generateReadme = isDialogic;
 
       const result = await exportService.exportStory(storyData, config);
 
@@ -483,16 +490,18 @@ This export contains your project data in a structured format.
           downloadFile(result.content, result.metadata.filename, 'text/plain');
         }
 
-        trackProjectExport(metricsParams, 'DIALOGIC', isSidebarOpened, projectId, currentTimelineId).catch((err) => {
-          console.error('Error sending analytics event:', err);
-        });
+        if (isDialogic) {
+          trackProjectExport(metricsParams, 'DIALOGIC', isSidebarOpened, projectId, currentTimelineId).catch((err) => {
+            console.error('Error sending analytics event:', err);
+          });
+        }
       } else {
         console.error('Dialogic export failed:', result.errors);
-        window.alert(t('export_modal.errors.dialogic_export_failed') + (result.errors?.join(', ') || 'Unknown error'));
+        window.alert(t(`export_modal.errors.${format}_export_failed`) + (result.errors?.join(', ') || 'Unknown error'));
       }
     } catch (error) {
       console.error('Dialogic export error:', error);
-      window.alert(t('export_modal.errors.dialogic_export_error'));
+      window.alert(t(`export_modal.errors.${format}_export_error`));
     }
   };
 
@@ -505,6 +514,8 @@ This export contains your project data in a structured format.
       await exportToRenpy();
     } else if (selectedFormat === 'dialogic') {
       await exportToDialogic();
+    } else if (selectedFormat === 'dialogue_manager') {
+      await exportToDialogic(ExportFormat.DIALOGUE_MANAGER);
     }
 
     // Закрываем окно экспорта после скачивания
